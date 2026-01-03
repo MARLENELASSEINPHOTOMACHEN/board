@@ -62,6 +62,10 @@ Exporters in `services/export/` implement a common interface for JSON, SVG, and 
 - Only use JSDoc comments when complexity requires explanation
 - Avoid comments that merely restate what the code clearly shows
 
+## Code Quality Standards
+
+- **Never compromise type safety**: No `any`, no non-null assertion operator (`!`), no type assertions (`as Type`)
+
 ## Svelte MCP Server
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
