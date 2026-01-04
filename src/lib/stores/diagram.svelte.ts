@@ -1,5 +1,4 @@
-import type { Diagram, DiagramElement, Relationship, Viewport, ClassElement, NoteElement, Attribute, Method } from '$lib/types';
-import { generateId } from '$lib/utils';
+import type { Diagram, DiagramElement, Relationship, Viewport, ClassElement, Attribute, Method } from '$lib/types';
 import { createHistoryStore } from './history.svelte';
 import { storage } from '$lib/services/storage';
 
@@ -23,13 +22,13 @@ function createDiagramStore() {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			if (currentDiagram) {
-				storage.saveDiagram({
+				storage.saveDiagram($state.snapshot({
 					...currentDiagram,
 					elements: history.current.elements,
 					relationships: history.current.relationships,
 					viewport: history.current.viewport,
 					updatedAt: new Date()
-				});
+				}));
 			}
 		}, 500);
 	}
