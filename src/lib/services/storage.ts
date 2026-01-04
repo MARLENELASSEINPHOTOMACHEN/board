@@ -2,6 +2,7 @@ import type { Project, Diagram, Folder } from '$lib/types';
 
 const DB_NAME = 'board-diagrams';
 const DB_VERSION = 1;
+const REQUIRED_STORES = ['projects', 'diagrams', 'folders', 'settings'] as const;
 
 interface DBSchema {
 	projects: Project;
@@ -14,17 +15,28 @@ type StoreName = keyof DBSchema;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function openDatabase(): Promise<IDBDatabase> {
-	if (dbPromise) return dbPromise;
+function deleteDatabase(): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.deleteDatabase(DB_NAME);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+		request.onblocked = () => {
+			console.warn('Database deletion blocked. Close other tabs using this app.');
+			reject(new Error('Database deletion blocked'));
+		};
+	});
+}
 
-	dbPromise = new Promise((resolve, reject) => {
+function openDatabaseInternal(): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onerror = () => reject(request.error);
+
 		request.onsuccess = () => resolve(request.result);
 
-		request.onupgradeneeded = (event) => {
-			const db = (event.target as IDBOpenDBRequest).result;
+		request.onupgradeneeded = () => {
+			const db = request.result;
 
 			if (!db.objectStoreNames.contains('projects')) {
 				db.createObjectStore('projects', { keyPath: 'id' });
@@ -45,6 +57,34 @@ function openDatabase(): Promise<IDBDatabase> {
 				db.createObjectStore('settings', { keyPath: 'key' });
 			}
 		};
+
+		request.onblocked = () => {
+			console.warn('Database upgrade blocked. Close other tabs using this app.');
+		};
+	});
+}
+
+function openDatabase(): Promise<IDBDatabase> {
+	if (dbPromise) return dbPromise;
+
+	dbPromise = openDatabaseInternal().then(async (db) => {
+		const missingStores = REQUIRED_STORES.filter(
+			(store) => !db.objectStoreNames.contains(store)
+		);
+
+		if (missingStores.length > 0) {
+			console.warn(`Database corrupt: missing stores [${missingStores.join(', ')}]. Recreating...`);
+			db.close();
+			dbPromise = null;
+			await deleteDatabase();
+			return openDatabaseInternal();
+		}
+
+		db.onclose = () => {
+			dbPromise = null;
+		};
+
+		return db;
 	});
 
 	return dbPromise;
