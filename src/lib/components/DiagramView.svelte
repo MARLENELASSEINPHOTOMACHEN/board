@@ -56,7 +56,6 @@
 <Canvas>
 	<RelationshipLayer
 		relationships={diagram.relationships}
-		elements={diagram.elements}
 		{elementRects}
 	/>
 

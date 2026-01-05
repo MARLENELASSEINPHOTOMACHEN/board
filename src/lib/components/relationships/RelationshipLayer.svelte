@@ -1,23 +1,20 @@
 <script lang="ts">
-	import type { DiagramElement, Relationship, Rect } from '$lib/types';
+	import type { Relationship, Rect } from '$lib/types';
 	import RelationshipLine from './RelationshipLine.svelte';
-	import RelationshipMarkers from './RelationshipMarkers.svelte';
 
 	interface Props {
 		relationships: Relationship[];
-		elements: DiagramElement[];
 		elementRects: Map<string, Rect>;
 	}
 
-	let { relationships, elements, elementRects }: Props = $props();
+	let { relationships, elementRects }: Props = $props();
 </script>
 
-<svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-	<RelationshipMarkers />
-
+<!-- Large fixed size ensures lines aren't clipped when elements are far from origin -->
+<svg class="absolute left-0 top-0 w-[10000px] h-[10000px] pointer-events-none overflow-visible">
 	<g class="pointer-events-auto">
 		{#each relationships as relationship (relationship.id)}
-			<RelationshipLine {relationship} {elements} {elementRects} />
+			<RelationshipLine {relationship} {elementRects} />
 		{/each}
 	</g>
 </svg>
