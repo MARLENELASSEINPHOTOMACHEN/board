@@ -137,39 +137,39 @@ type DiagramElement = ClassElement | NoteElement;
 ### MVP (Phase 1)
 
 #### Core Diagram Editing
-- [ ] Create classes, abstract classes, and interfaces
-- [ ] Edit class name (inline editing)
-- [ ] Add/edit/delete attributes with name, type, visibility
-- [ ] Add/edit/delete methods with name, return type, parameters, visibility
-- [ ] Drag and drop to reposition elements
-- [ ] Delete elements (keyboard or UI)
+- [x] Create classes, abstract classes, and interfaces
+- [x] Edit class name (inline editing)
+- [x] Add/edit/delete attributes with name, type, visibility
+- [x] Add/edit/delete methods with name, return type, parameters, visibility
+- [x] Drag and drop to reposition elements
+- [x] Delete elements (keyboard or UI)
 
 #### Relationships
-- [ ] Create relationships between classes
-- [ ] Relationship types: association, inheritance
-- [ ] Custom SVG path rendering with proper UML notation
+- [x] Create relationships between classes
+- [x] Relationship types: association, inheritance
+- [x] Custom SVG path rendering with proper UML notation
 - [ ] Editable multiplicity labels
-- [ ] Anchor point selection (which side of class box)
+- [x] Anchor point selection (which side of class box) - auto-calculated
 
 #### Canvas
-- [ ] Zoom in/out (scroll wheel)
-- [ ] Pan (drag empty canvas, or scroll)
-- [ ] Dot grid background (retro aesthetic)
+- [x] Zoom in/out (scroll wheel + Ctrl/Cmd)
+- [x] Pan (Shift+drag or middle mouse)
+- [x] Dot grid background (retro aesthetic)
 
 #### Canvas Notes
-- [ ] Create plain text note boxes on canvas
-- [ ] Position and drag notes like class elements
-- [ ] Edit note content (double-click)
+- [x] Create plain text note boxes on canvas
+- [x] Position and drag notes like class elements
+- [x] Edit note content (double-click)
 
 #### Persistence
-- [ ] Auto-save to IndexedDB
-- [ ] Multiple diagrams per project
-- [ ] Sidebar file tree with nested folders
-- [ ] Remember and restore last opened diagram
+- [x] Auto-save to IndexedDB
+- [x] Multiple diagrams per project
+- [x] Sidebar file tree (flat, folders not yet implemented)
+- [x] Remember and restore last opened diagram
 
 #### History
-- [ ] Full undo/redo stack
-- [ ] Keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z
+- [x] Full undo/redo stack
+- [x] Keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z
 
 ### Phase 2
 
@@ -185,9 +185,9 @@ type DiagramElement = ClassElement | NoteElement;
 - [ ] App manifest with icons
 
 #### Additional Relationship Types
-- [ ] Aggregation (hollow diamond)
-- [ ] Composition (filled diamond)
-- [ ] Implementation (dashed line with arrow)
+- [x] Aggregation (hollow diamond)
+- [x] Composition (filled diamond)
+- [x] Implementation (dashed line with arrow)
 
 ### Future Phases
 
@@ -515,6 +515,61 @@ Tests are co-located with source files using `.test.ts` suffix.
 - Context menus
 - Rich text in notes
 - Drag selection box (use Shift+click instead)
+
+---
+
+## Implementation Status
+
+### Completed (MVP Phase 1)
+
+**Foundation:**
+- SvelteKit 2 + Svelte 5 with runes (`$state`, `$derived`, `$effect`)
+- TypeScript strict mode
+- Tailwind CSS v4
+- Static adapter for client-only PWA
+
+**Types** (`src/lib/types/`):
+- `geometry.ts` - Point, Rect, Size, Viewport
+- `elements.ts` - ClassElement, NoteElement, Attribute, Method, Parameter
+- `relationships.ts` - Relationship, AnchorPoint, RelationshipType
+- `diagram.ts` - Project, Diagram, Folder
+
+**Utilities** (`src/lib/utils/`):
+- `id.ts` - UUID generation via `crypto.randomUUID()`
+- `geometry.ts` - Anchor positioning, orthogonal path generation, coordinate transforms
+- `keyboard.ts` - Keyboard shortcut matching
+
+**Services** (`src/lib/services/`):
+- `storage.ts` - IndexedDB wrapper (projects, diagrams, folders, settings stores)
+
+**Stores** (`src/lib/stores/`) - Svelte 5 runes:
+- `project.svelte.ts` - Project/diagram CRUD, initialization, auto-save
+- `diagram.svelte.ts` - Elements, relationships, viewport, integrated undo/redo
+- `selection.svelte.ts` - Multi-selection state management
+- `history.svelte.ts` - Generic undo/redo stack (100 action limit)
+
+**Components** (`src/lib/components/`):
+- `canvas/` - Canvas with CSS transform zoom/pan, dot grid background
+- `elements/` - ClassBox, NoteBox with inline editing, drag-and-drop
+- `relationships/` - SVG orthogonal lines with polygon/polyline arrow heads
+- `sidebar/` - Project tree, diagram list, rename/delete
+- `toolbar/` - Element creation buttons, zoom controls
+- `header/` - Logo, undo/redo buttons, keyboard shortcut handler
+- `ui/` - RelationshipModal for creating connections
+
+**Key Technical Decisions:**
+- Arrow heads use `<polygon>`/`<polyline>` instead of SVG markers for cross-browser compatibility (Chrome has marker bugs with CSS transforms)
+- Orthogonal (90-degree) line routing between elements
+- Auto-anchor selection based on relative element positions
+- Debounced auto-save (500ms) to IndexedDB
+
+### Remaining for MVP
+- Editable multiplicity labels on relationships
+- Nested folder organization in sidebar
+
+### Phase 2 (Not Started)
+- Export/Import (JSON, SVG, PNG)
+- PWA service worker and manifest
 
 ---
 
