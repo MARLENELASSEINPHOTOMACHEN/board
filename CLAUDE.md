@@ -66,6 +66,7 @@ Exporters in `services/export/` implement a common interface for JSON, SVG, and 
 ## Code Quality Standards
 
 - **Never compromise type safety**: No `any`, no non-null assertion operator (`!`), no type assertions (`as Type`)
+- **Prefer pure functions over side effects**: Utility functions should compute and return values - let callers handle side effects. This makes code easier to test, reason about, and reuse.
 
 ## Svelte MCP Server
 
