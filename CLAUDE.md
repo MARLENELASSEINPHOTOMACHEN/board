@@ -58,9 +58,10 @@ Exporters in `services/export/` implement a common interface for JSON, SVG, and 
 
 ## Code Style
 
-- Use descriptive names instead of comments for obvious documentation
-- Only use JSDoc comments when complexity requires explanation
-- Avoid comments that merely restate what the code clearly shows
+- Minimize comments; prefer self-documenting code with clear variable/function names
+- A comment should only exist when absolutely necessary to explain complex logic
+- Never add comments that restate what the code already shows
+- Comment style: casual lowercase - short punchy sentences - use dashes not commas - no formality
 
 ## Code Quality Standards
 
