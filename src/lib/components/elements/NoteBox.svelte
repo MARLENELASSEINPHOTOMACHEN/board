@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { NoteElement } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
+	import { createDragState, startDrag, getDragMoves, endDrag } from '$lib/utils';
 
 	interface Props {
 		element: NoteElement;
@@ -8,9 +9,8 @@
 
 	let { element }: Props = $props();
 
-	let isDragging = $state(false);
+	let dragState = $state(createDragState());
 	let isEditing = $state(false);
-	let dragOffset = $state({ x: 0, y: 0 });
 	let editContent = $state('');
 	let textareaRef: HTMLTextAreaElement | undefined = $state();
 
@@ -28,27 +28,22 @@
 			selection.select(element.id);
 		}
 
-		isDragging = true;
-		dragOffset = {
-			x: event.clientX / diagram.viewport.zoom - element.position.x,
-			y: event.clientY / diagram.viewport.zoom - element.position.y
-		};
+		dragState = startDrag(event);
 	}
 
 	function handleMouseMove(event: MouseEvent) {
-		if (!isDragging) return;
-
-		const x = event.clientX / diagram.viewport.zoom - dragOffset.x;
-		const y = event.clientY / diagram.viewport.zoom - dragOffset.y;
-
-		diagram.moveElement(element.id, x, y);
+		const { moves } = getDragMoves(dragState, event);
+		if (moves.length > 0) {
+			diagram.moveElements(moves);
+		}
 	}
 
 	function handleMouseUp() {
-		if (isDragging) {
-			isDragging = false;
-			diagram.commitMove(element.id);
+		const { newState, elementIds } = endDrag(dragState);
+		if (elementIds.length > 0) {
+			diagram.commitMoves(elementIds);
 		}
+		dragState = newState;
 	}
 
 	function startEdit() {
@@ -88,8 +83,8 @@
 	class:border-stone-800={isSelected}
 	class:border-yellow-400={!isSelected}
 	class:shadow-lg={isSelected}
-	class:cursor-grabbing={isDragging}
-	class:cursor-grab={!isDragging && !isEditing}
+	class:cursor-grabbing={dragState.isDragging}
+	class:cursor-grab={!dragState.isDragging && !isEditing}
 	style:left="{element.position.x}px"
 	style:top="{element.position.y}px"
 	onmousedown={handleMouseDown}

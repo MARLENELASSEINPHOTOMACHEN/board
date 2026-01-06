@@ -23,15 +23,15 @@
 			handleRedo();
 		} else if (matchesShortcut(event, SHORTCUTS.DELETE) || matchesShortcut(event, SHORTCUTS.BACKSPACE)) {
 			event.preventDefault();
-			for (const id of selection.ids) {
-				const element = diagram.elements.find((el) => el.id === id);
-				if (element) {
-					diagram.removeElement(id);
-				} else {
-					diagram.removeRelationship(id);
-				}
+			const ids = [...selection.ids];
+			if (ids.length > 0) {
+				const elementIdSet = new Set(diagram.elements.map((el) => el.id));
+				const relationshipIdSet = new Set(diagram.relationships.map((rel) => rel.id));
+				const elementIds = ids.filter((id) => elementIdSet.has(id));
+				const relationshipIds = ids.filter((id) => relationshipIdSet.has(id));
+				diagram.removeSelected(elementIds, relationshipIds);
+				selection.clear();
 			}
-			selection.clear();
 		} else if (matchesShortcut(event, SHORTCUTS.ESCAPE)) {
 			selection.clear();
 		}

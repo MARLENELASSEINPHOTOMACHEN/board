@@ -149,6 +149,8 @@ function createProjectStore() {
 			await storage.deleteDiagram(diagramId);
 			diagrams = diagrams.filter((d) => d.id !== diagramId);
 
+			diagramStore.clearDiagramHistory(diagramId);
+
 			if (diagramStore.diagram?.id === diagramId) {
 				diagramStore.unload();
 				if (diagrams.length > 0) {

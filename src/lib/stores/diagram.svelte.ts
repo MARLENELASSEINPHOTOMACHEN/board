@@ -1,20 +1,11 @@
 import type { Diagram, DiagramElement, Relationship, Viewport, ClassElement, Attribute, Method } from '$lib/types';
-import { createHistoryStore } from './history.svelte';
+import { isClassElement } from '$lib/types/elements';
+import { historyManager } from './history.svelte';
 import { storage } from '$lib/services/storage';
-
-interface DiagramState {
-	elements: DiagramElement[];
-	relationships: Relationship[];
-	viewport: Viewport;
-}
 
 function createDiagramStore() {
 	let currentDiagram = $state<Diagram | null>(null);
-	const history = createHistoryStore<DiagramState>({
-		elements: [],
-		relationships: [],
-		viewport: { x: 0, y: 0, zoom: 1 }
-	});
+	let viewport = $state<Viewport>({ x: 0, y: 0, zoom: 1 });
 
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -24,9 +15,9 @@ function createDiagramStore() {
 			if (currentDiagram) {
 				storage.saveDiagram($state.snapshot({
 					...currentDiagram,
-					elements: history.current.elements,
-					relationships: history.current.relationships,
-					viewport: history.current.viewport,
+					elements: historyManager.current.elements,
+					relationships: historyManager.current.relationships,
+					viewport: viewport,
 					updatedAt: new Date()
 				}));
 			}
@@ -34,14 +25,7 @@ function createDiagramStore() {
 	}
 
 	function pushHistory(description: string) {
-		history.push(
-			{
-				elements: [...history.current.elements],
-				relationships: [...history.current.relationships],
-				viewport: { ...history.current.viewport }
-			},
-			description
-		);
+		historyManager.push(description);
 		scheduleAutoSave();
 	}
 
@@ -51,82 +35,152 @@ function createDiagramStore() {
 		},
 
 		get elements(): DiagramElement[] {
-			return history.current.elements;
+			return historyManager.current.elements;
 		},
 
 		get relationships(): Relationship[] {
-			return history.current.relationships;
+			return historyManager.current.relationships;
 		},
 
 		get viewport(): Viewport {
-			return history.current.viewport;
+			return viewport;
 		},
 
 		get canUndo() {
-			return history.canUndo;
+			return historyManager.canUndo;
 		},
 
 		get canRedo() {
-			return history.canRedo;
+			return historyManager.canRedo;
 		},
 
 		load(diagram: Diagram) {
 			currentDiagram = diagram;
-			history.reset({
+			viewport = diagram.viewport;
+			historyManager.switchToDiagram(diagram.id, {
 				elements: diagram.elements,
-				relationships: diagram.relationships,
-				viewport: diagram.viewport
+				relationships: diagram.relationships
 			});
 		},
 
 		unload() {
 			currentDiagram = null;
-			history.reset({
-				elements: [],
-				relationships: [],
-				viewport: { x: 0, y: 0, zoom: 1 }
-			});
+		},
+
+		clearDiagramHistory(diagramId: string) {
+			historyManager.clearDiagram(diagramId);
 		},
 
 		undo() {
-			const state = history.undo();
+			const state = historyManager.undo();
 			if (state) scheduleAutoSave();
 			return state;
 		},
 
 		redo() {
-			const state = history.redo();
+			const state = historyManager.redo();
 			if (state) scheduleAutoSave();
 			return state;
 		},
 
 		addElement(element: DiagramElement) {
-			history.current.elements = [...history.current.elements, element];
+			historyManager.updateState({
+				elements: [...historyManager.current.elements, element]
+			});
 			pushHistory(`Add ${element.type}`);
 		},
 
 		updateElement(id: string, updates: Partial<DiagramElement>) {
-			history.current.elements = history.current.elements.map((el) =>
-				el.id === id ? { ...el, ...updates } : el
-			) as DiagramElement[];
+			const elements = historyManager.current.elements.map((el): DiagramElement => {
+				if (el.id !== id) return el;
+
+				if (isClassElement(el)) {
+					return {
+						id: el.id,
+						type: el.type,
+						name: 'name' in updates && updates.name !== undefined ? updates.name : el.name,
+						position: updates.position ?? el.position,
+						attributes:
+							'attributes' in updates && updates.attributes !== undefined
+								? updates.attributes
+								: el.attributes,
+						methods:
+							'methods' in updates && updates.methods !== undefined ? updates.methods : el.methods
+					};
+				}
+
+				return {
+					id: el.id,
+					type: 'note',
+					content:
+						'content' in updates && updates.content !== undefined ? updates.content : el.content,
+					position: updates.position ?? el.position
+				};
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Update element');
 		},
 
 		removeElement(id: string) {
-			const element = history.current.elements.find((el) => el.id === id);
+			const element = historyManager.current.elements.find((el) => el.id === id);
 			if (!element) return;
 
-			history.current.elements = history.current.elements.filter((el) => el.id !== id);
-			history.current.relationships = history.current.relationships.filter(
-				(rel) => rel.sourceId !== id && rel.targetId !== id
+			this.removeSelected([id], []);
+		},
+
+		removeSelected(elementIds: string[], relationshipIds: string[]) {
+			const elements = historyManager.current.elements;
+			const relationships = historyManager.current.relationships;
+
+			const removedElements = elements.filter((el) => elementIds.includes(el.id));
+			const remainingElements = elements.filter((el) => !elementIds.includes(el.id));
+			const remainingRelationships = relationships.filter(
+				(rel) =>
+					!relationshipIds.includes(rel.id) &&
+					!elementIds.includes(rel.sourceId) &&
+					!elementIds.includes(rel.targetId)
 			);
-			pushHistory(`Remove ${element.type}`);
+
+			historyManager.updateState({
+				elements: remainingElements,
+				relationships: remainingRelationships
+			});
+
+			const totalCount = elementIds.length + relationshipIds.length;
+			let desc: string;
+			if (totalCount === 1) {
+				if (elementIds.length === 1 && removedElements.length > 0) {
+					desc = `Delete ${removedElements[0].type}`;
+				} else {
+					desc = 'Delete relationship';
+				}
+			} else {
+				desc = `Delete ${totalCount} items`;
+			}
+
+			pushHistory(desc);
 		},
 
 		moveElement(id: string, x: number, y: number) {
-			history.current.elements = history.current.elements.map((el) =>
-				el.id === id ? { ...el, position: { x, y } } : el
-			) as DiagramElement[];
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === id) {
+					return { ...el, position: { x, y } };
+				}
+				return el;
+			});
+			historyManager.updateState({ elements });
+			scheduleAutoSave();
+		},
+
+		moveElements(moves: Array<{ id: string; x: number; y: number }>) {
+			const elements = historyManager.current.elements.map((el) => {
+				const move = moves.find((m) => m.id === el.id);
+				if (move) {
+					return { ...el, position: { x: move.x, y: move.y } };
+				}
+				return el;
+			});
+			historyManager.updateState({ elements });
 			scheduleAutoSave();
 		},
 
@@ -134,121 +188,134 @@ function createDiagramStore() {
 			pushHistory('Move element');
 		},
 
+		commitMoves(ids: string[]) {
+			const desc = ids.length === 1 ? 'Move element' : `Move ${ids.length} elements`;
+			pushHistory(desc);
+		},
+
 		addAttribute(classId: string, attribute: Attribute) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
-					return { ...el, attributes: [...(el as ClassElement).attributes, attribute] };
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
+					return { ...el, attributes: [...el.attributes, attribute] };
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Add attribute');
 		},
 
 		updateAttribute(classId: string, attributeId: string, updates: Partial<Attribute>) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
 					return {
 						...el,
-						attributes: (el as ClassElement).attributes.map((attr) =>
+						attributes: el.attributes.map((attr) =>
 							attr.id === attributeId ? { ...attr, ...updates } : attr
 						)
 					};
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Update attribute');
 		},
 
 		removeAttribute(classId: string, attributeId: string) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
 					return {
 						...el,
-						attributes: (el as ClassElement).attributes.filter((attr) => attr.id !== attributeId)
+						attributes: el.attributes.filter((attr) => attr.id !== attributeId)
 					};
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Remove attribute');
 		},
 
 		addMethod(classId: string, method: Method) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
-					return { ...el, methods: [...(el as ClassElement).methods, method] };
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
+					return { ...el, methods: [...el.methods, method] };
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Add method');
 		},
 
 		updateMethod(classId: string, methodId: string, updates: Partial<Method>) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
 					return {
 						...el,
-						methods: (el as ClassElement).methods.map((method) =>
+						methods: el.methods.map((method) =>
 							method.id === methodId ? { ...method, ...updates } : method
 						)
 					};
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Update method');
 		},
 
 		removeMethod(classId: string, methodId: string) {
-			history.current.elements = history.current.elements.map((el) => {
-				if (el.id === classId && el.type !== 'note') {
+			const elements = historyManager.current.elements.map((el) => {
+				if (el.id === classId && isClassElement(el)) {
 					return {
 						...el,
-						methods: (el as ClassElement).methods.filter((method) => method.id !== methodId)
+						methods: el.methods.filter((method) => method.id !== methodId)
 					};
 				}
 				return el;
-			}) as DiagramElement[];
+			});
+			historyManager.updateState({ elements });
 			pushHistory('Remove method');
 		},
 
 		addRelationship(relationship: Relationship) {
-			history.current.relationships = [...history.current.relationships, relationship];
+			historyManager.updateState({
+				relationships: [...historyManager.current.relationships, relationship]
+			});
 			pushHistory('Add relationship');
 		},
 
 		updateRelationship(id: string, updates: Partial<Relationship>) {
-			history.current.relationships = history.current.relationships.map((rel) =>
+			const relationships = historyManager.current.relationships.map((rel) =>
 				rel.id === id ? { ...rel, ...updates } : rel
 			);
+			historyManager.updateState({ relationships });
 			pushHistory('Update relationship');
 		},
 
 		removeRelationship(id: string) {
-			history.current.relationships = history.current.relationships.filter((rel) => rel.id !== id);
-			pushHistory('Remove relationship');
+			this.removeSelected([], [id]);
 		},
 
-		setViewport(viewport: Viewport) {
-			history.current.viewport = viewport;
+		setViewport(newViewport: Viewport) {
+			viewport = newViewport;
 			scheduleAutoSave();
 		},
 
 		pan(dx: number, dy: number) {
-			history.current.viewport = {
-				...history.current.viewport,
-				x: history.current.viewport.x + dx,
-				y: history.current.viewport.y + dy
+			viewport = {
+				...viewport,
+				x: viewport.x + dx,
+				y: viewport.y + dy
 			};
 			scheduleAutoSave();
 		},
 
 		zoom(factor: number, centerX: number, centerY: number) {
-			const oldZoom = history.current.viewport.zoom;
+			const oldZoom = viewport.zoom;
 			const newZoom = Math.max(0.1, Math.min(3, oldZoom * factor));
 
-			const wx = (centerX - history.current.viewport.x) / oldZoom;
-			const wy = (centerY - history.current.viewport.y) / oldZoom;
+			const wx = (centerX - viewport.x) / oldZoom;
+			const wy = (centerY - viewport.y) / oldZoom;
 
-			history.current.viewport = {
+			viewport = {
 				x: centerX - wx * newZoom,
 				y: centerY - wy * newZoom,
 				zoom: newZoom

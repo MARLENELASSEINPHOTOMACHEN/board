@@ -477,8 +477,9 @@ Tests are co-located with source files using `.test.ts` suffix.
 ## Data Management
 
 ### History
-- **Undo limit**: 100 actions
+- **Undo limit**: 50 actions per diagram
 - **Scope**: Per-session (clears on page reload)
+- **Multi-diagram**: History persists when switching diagrams within session
 
 ### Export/Import
 - **JSON export**: Single diagram at a time
@@ -497,7 +498,7 @@ Tests are co-located with source files using `.test.ts` suffix.
 - Relationships with orthogonal routing
 - Canvas notes (plain text)
 - Nested folder organization
-- Undo/redo (100 actions)
+- Undo/redo (50 actions)
 
 ### Not in MVP (Future Phases)
 - Copy/paste elements
@@ -546,7 +547,7 @@ Tests are co-located with source files using `.test.ts` suffix.
 - `project.svelte.ts` - Project/diagram CRUD, initialization, auto-save
 - `diagram.svelte.ts` - Elements, relationships, viewport, integrated undo/redo
 - `selection.svelte.ts` - Multi-selection state management
-- `history.svelte.ts` - Generic undo/redo stack (100 action limit)
+- `history.svelte.ts` - Per-diagram undo/redo manager (50 action limit)
 
 **Components** (`src/lib/components/`):
 - `canvas/` - Canvas with CSS transform zoom/pan, dot grid background

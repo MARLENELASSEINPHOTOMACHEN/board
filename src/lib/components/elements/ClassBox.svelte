@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ClassElement, Attribute, Method } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
-	import { generateId } from '$lib/utils';
+	import { generateId, createDragState, startDrag, getDragMoves, endDrag } from '$lib/utils';
 	import InlineEdit from './InlineEdit.svelte';
 	import AttributeRow from './AttributeRow.svelte';
 	import MethodRow from './MethodRow.svelte';
@@ -13,8 +13,7 @@
 	let { element }: Props = $props();
 
 	let boxRef: HTMLDivElement | undefined = $state();
-	let isDragging = $state(false);
-	let dragOffset = $state({ x: 0, y: 0 });
+	let dragState = $state(createDragState());
 
 	const isSelected = $derived(selection.isSelected(element.id));
 
@@ -39,27 +38,22 @@
 			selection.select(element.id);
 		}
 
-		isDragging = true;
-		dragOffset = {
-			x: event.clientX / diagram.viewport.zoom - element.position.x,
-			y: event.clientY / diagram.viewport.zoom - element.position.y
-		};
+		dragState = startDrag(event);
 	}
 
 	function handleMouseMove(event: MouseEvent) {
-		if (!isDragging) return;
-
-		const x = event.clientX / diagram.viewport.zoom - dragOffset.x;
-		const y = event.clientY / diagram.viewport.zoom - dragOffset.y;
-
-		diagram.moveElement(element.id, x, y);
+		const { moves } = getDragMoves(dragState, event);
+		if (moves.length > 0) {
+			diagram.moveElements(moves);
+		}
 	}
 
 	function handleMouseUp() {
-		if (isDragging) {
-			isDragging = false;
-			diagram.commitMove(element.id);
+		const { newState, elementIds } = endDrag(dragState);
+		if (elementIds.length > 0) {
+			diagram.commitMoves(elementIds);
 		}
+		dragState = newState;
 	}
 
 	function updateName(name: string) {
@@ -112,8 +106,8 @@
 	class:border-stone-800={isSelected}
 	class:border-stone-400={!isSelected}
 	class:shadow-lg={isSelected}
-	class:cursor-grabbing={isDragging}
-	class:cursor-grab={!isDragging}
+	class:cursor-grabbing={dragState.isDragging}
+	class:cursor-grab={!dragState.isDragging}
 	style:left="{element.position.x}px"
 	style:top="{element.position.y}px"
 	onmousedown={handleMouseDown}
