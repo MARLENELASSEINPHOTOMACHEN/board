@@ -3,7 +3,6 @@
 	import Grid from './Grid.svelte';
 	import { diagram } from '$lib/stores';
 	import { selection } from '$lib/stores';
-	import { screenToCanvas } from '$lib/utils';
 
 	interface Props {
 		children?: Snippet;

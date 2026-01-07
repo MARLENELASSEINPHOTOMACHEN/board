@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { NoteElement } from '$lib/types';
+	import type { NoteElement, Point } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
-	import { createDragState, startDrag, getDragMoves, endDrag } from '$lib/utils';
+	import { draggable } from '$lib/actions';
 
 	interface Props {
 		element: NoteElement;
@@ -9,42 +9,35 @@
 
 	let { element }: Props = $props();
 
-	let dragState = $state(createDragState());
+	let isDragging = $state(false);
 	let isEditing = $state(false);
 	let editContent = $state('');
 	let textareaRef: HTMLTextAreaElement | undefined = $state();
 
 	const isSelected = $derived(selection.isSelected(element.id));
 
-	function handleMouseDown(event: MouseEvent) {
-		if (event.button !== 0) return;
-		if (isEditing) return;
-		if (event.detail > 1) return;
+	function shouldIgnoreDrag(event: MouseEvent): boolean {
+		return isEditing || event.detail > 1;
+	}
 
-		event.stopPropagation();
-
+	function handleDragStart(event: MouseEvent) {
 		if (event.shiftKey) {
 			selection.toggle(element.id);
 		} else if (!isSelected) {
 			selection.select(element.id);
 		}
-
-		dragState = startDrag(event);
+		isDragging = true;
 	}
 
-	function handleMouseMove(event: MouseEvent) {
-		const { moves } = getDragMoves(dragState, event);
-		if (moves.length > 0) {
-			diagram.moveElements(moves);
+	function getStartPositions(): Map<string, Point> {
+		const positions = new Map<string, Point>();
+		for (const id of selection.ids) {
+			const el = diagram.elements.find((e) => e.id === id);
+			if (el) {
+				positions.set(id, { ...el.position });
+			}
 		}
-	}
-
-	function handleMouseUp() {
-		const { newState, elementIds } = endDrag(dragState);
-		if (elementIds.length > 0) {
-			diagram.commitMoves(elementIds);
-		}
-		dragState = newState;
+		return positions;
 	}
 
 	function startEdit() {
@@ -77,18 +70,26 @@
 	});
 </script>
 
-<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
-
 <div
 	class="absolute bg-yellow-100 border-2 rounded shadow-md min-w-[120px] min-h-[60px] select-none"
 	class:border-stone-800={isSelected}
 	class:border-yellow-400={!isSelected}
 	class:shadow-lg={isSelected}
-	class:cursor-grabbing={dragState.isDragging}
-	class:cursor-grab={!dragState.isDragging && !isEditing}
+	class:cursor-grabbing={isDragging}
+	class:cursor-grab={!isDragging && !isEditing}
 	style:left="{element.position.x}px"
 	style:top="{element.position.y}px"
-	onmousedown={handleMouseDown}
+	use:draggable={{
+		getViewport: () => diagram.viewport,
+		shouldIgnore: shouldIgnoreDrag,
+		onDragStart: handleDragStart,
+		getStartPositions,
+		onMove: (moves) => diagram.moveElements(moves),
+		onEnd: (ids) => {
+			diagram.commitMoves(ids);
+			isDragging = false;
+		}
+	}}
 	ondblclick={startEdit}
 	role="button"
 	tabindex="0"

@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { ClassElement, Attribute, Method } from '$lib/types';
+	import type { ClassElement, Attribute, Method, Point } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
-	import { generateId, createDragState, startDrag, getDragMoves, endDrag } from '$lib/utils';
+	import { generateId } from '$lib/utils';
+	import { draggable } from '$lib/actions';
 	import InlineEdit from './InlineEdit.svelte';
 	import AttributeRow from './AttributeRow.svelte';
 	import MethodRow from './MethodRow.svelte';
@@ -12,8 +13,7 @@
 
 	let { element }: Props = $props();
 
-	let boxRef: HTMLDivElement | undefined = $state();
-	let dragState = $state(createDragState());
+	let isDragging = $state(false);
 
 	const isSelected = $derived(selection.isSelected(element.id));
 
@@ -25,36 +25,29 @@
 				: null
 	);
 
-	function handleMouseDown(event: MouseEvent) {
-		if (event.button !== 0) return;
-		if ((event.target as HTMLElement).tagName === 'INPUT') return;
-		if ((event.target as HTMLElement).tagName === 'BUTTON') return;
-		if (event.detail > 1) return;
+	function shouldIgnoreDrag(event: MouseEvent): boolean {
+		const target = event.target as HTMLElement;
+		return target.tagName === 'INPUT' || target.tagName === 'BUTTON' || event.detail > 1;
+	}
 
-		event.stopPropagation();
-
+	function handleDragStart(event: MouseEvent) {
 		if (event.shiftKey) {
 			selection.toggle(element.id);
 		} else if (!isSelected) {
 			selection.select(element.id);
 		}
-
-		dragState = startDrag(event);
+		isDragging = true;
 	}
 
-	function handleMouseMove(event: MouseEvent) {
-		const { moves } = getDragMoves(dragState, event);
-		if (moves.length > 0) {
-			diagram.moveElements(moves);
+	function getStartPositions(): Map<string, Point> {
+		const positions = new Map<string, Point>();
+		for (const id of selection.ids) {
+			const el = diagram.elements.find((e) => e.id === id);
+			if (el) {
+				positions.set(id, { ...el.position });
+			}
 		}
-	}
-
-	function handleMouseUp() {
-		const { newState, elementIds } = endDrag(dragState);
-		if (elementIds.length > 0) {
-			diagram.commitMoves(elementIds);
-		}
-		dragState = newState;
+		return positions;
 	}
 
 	function updateName(name: string) {
@@ -99,19 +92,26 @@
 	}
 </script>
 
-<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
-
 <div
-	bind:this={boxRef}
 	class="absolute bg-amber-50 border-2 rounded shadow-md min-w-[160px] select-none"
 	class:border-stone-800={isSelected}
 	class:border-stone-400={!isSelected}
 	class:shadow-lg={isSelected}
-	class:cursor-grabbing={dragState.isDragging}
-	class:cursor-grab={!dragState.isDragging}
+	class:cursor-grabbing={isDragging}
+	class:cursor-grab={!isDragging}
 	style:left="{element.position.x}px"
 	style:top="{element.position.y}px"
-	onmousedown={handleMouseDown}
+	use:draggable={{
+		getViewport: () => diagram.viewport,
+		shouldIgnore: shouldIgnoreDrag,
+		onDragStart: handleDragStart,
+		getStartPositions,
+		onMove: (moves) => diagram.moveElements(moves),
+		onEnd: (ids) => {
+			diagram.commitMoves(ids);
+			isDragging = false;
+		}
+	}}
 	role="button"
 	tabindex="0"
 	aria-label="{element.type} {element.name}"
