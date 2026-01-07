@@ -120,9 +120,10 @@
 		/>
 
 		{#if relationship.type === 'association'}
-			<!-- open arrow for association -->
+			<!-- open arrow for association - reorder points for chevron shape -->
+			{@const points = arrowPoints.split(' ')}
 			<polyline
-				points={arrowPoints}
+				points={`${points[1]} ${points[0]} ${points[2]}`}
 				fill="none"
 				stroke={strokeColor}
 				stroke-width={strokeWidth}
