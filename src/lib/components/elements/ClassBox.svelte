@@ -29,6 +29,7 @@
 		if (event.button !== 0) return;
 		if ((event.target as HTMLElement).tagName === 'INPUT') return;
 		if ((event.target as HTMLElement).tagName === 'BUTTON') return;
+		if (event.detail > 1) return;
 
 		event.stopPropagation();
 

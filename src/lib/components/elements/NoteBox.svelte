@@ -19,6 +19,7 @@
 	function handleMouseDown(event: MouseEvent) {
 		if (event.button !== 0) return;
 		if (isEditing) return;
+		if (event.detail > 1) return;
 
 		event.stopPropagation();
 

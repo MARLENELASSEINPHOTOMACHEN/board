@@ -62,6 +62,7 @@
 {:else}
 	<span
 		class="cursor-text select-none {className}"
+		onmousedown={(e) => e.stopPropagation()}
 		ondblclick={startEdit}
 		role="button"
 		tabindex="0"
