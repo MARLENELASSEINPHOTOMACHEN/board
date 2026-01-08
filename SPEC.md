@@ -43,6 +43,32 @@ A browser-based UML class diagram editor with a retro aesthetic. The application
 
 ## Data Models
 
+### Geometry Types
+```typescript
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+```
+
 ### Project
 ```typescript
 interface Project {
@@ -50,29 +76,46 @@ interface Project {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  diagrams: Diagram[];
+}
+```
+
+### Folder
+```typescript
+interface Folder {
+  id: string;
+  projectId: string;
+  name: string;
+  parentId: string | null;
 }
 ```
 
 ### Diagram
 ```typescript
+type DiagramType = 'class'; // Future: 'sequence' | 'er' | 'usecase'
+
 interface Diagram {
   id: string;
+  projectId: string;
   name: string;
-  type: 'class'; // Future: 'sequence' | 'er' | 'usecase'
+  type: DiagramType;
   elements: DiagramElement[];
   relationships: Relationship[];
-  viewport: { x: number; y: number; zoom: number };
+  viewport: Viewport;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
 ### Class Element
 ```typescript
+type Visibility = 'public' | 'private' | 'protected';
+type ClassType = 'class' | 'abstract' | 'interface';
+
 interface ClassElement {
   id: string;
-  type: 'class' | 'abstract' | 'interface';
+  type: ClassType;
   name: string;
-  position: { x: number; y: number };
+  position: Point;
   attributes: Attribute[];
   methods: Method[];
 }
@@ -81,7 +124,7 @@ interface Attribute {
   id: string;
   name: string;
   dataType: string;
-  visibility: 'public' | 'private' | 'protected';
+  visibility: Visibility;
 }
 
 interface Method {
@@ -89,7 +132,7 @@ interface Method {
   name: string;
   returnType: string;
   parameters: Parameter[];
-  visibility: 'public' | 'private' | 'protected';
+  visibility: Visibility;
 }
 
 interface Parameter {
@@ -101,18 +144,24 @@ interface Parameter {
 
 ### Relationship
 ```typescript
+type RelationshipType = 'association' | 'inheritance' | 'implementation' | 'aggregation' | 'composition';
+type AnchorPoint = 'top' | 'bottom' | 'left' | 'right' | 'auto';
+
+interface RelationshipAnchors {
+  source: AnchorPoint;
+  target: AnchorPoint;
+}
+
 interface Relationship {
   id: string;
-  type: 'association' | 'inheritance' | 'implementation' | 'aggregation' | 'composition';
+  type: RelationshipType;
   sourceId: string;
   targetId: string;
   sourceMultiplicity?: string;
   targetMultiplicity?: string;
   label?: string;
-  anchors: { source: AnchorPoint; target: AnchorPoint };
+  anchors: RelationshipAnchors;
 }
-
-type AnchorPoint = 'top' | 'bottom' | 'left' | 'right' | 'auto';
 ```
 
 ### Note Element
@@ -121,13 +170,17 @@ interface NoteElement {
   id: string;
   type: 'note';
   content: string;
-  position: { x: number; y: number };
+  position: Point;
 }
 ```
 
 ### Diagram Element Union
 ```typescript
 type DiagramElement = ClassElement | NoteElement;
+
+// Type guards
+function isClassElement(element: DiagramElement): element is ClassElement;
+function isNoteElement(element: DiagramElement): element is NoteElement;
 ```
 
 ---
@@ -142,18 +195,19 @@ type DiagramElement = ClassElement | NoteElement;
 - [x] Add/edit/delete attributes with name, type, visibility
 - [x] Add/edit/delete methods with name, return type, parameters, visibility
 - [x] Drag and drop to reposition elements
-- [x] Delete elements (keyboard or UI)
+- [x] Multi-select elements (Shift+click)
+- [x] Delete elements (keyboard: Delete/Backspace)
 
 #### Relationships
-- [x] Create relationships between classes
-- [x] Relationship types: association, inheritance
-- [x] Custom SVG path rendering with proper UML notation
+- [x] Create relationships between classes (via modal dialog)
+- [x] Relationship types: association, inheritance, implementation, aggregation, composition
+- [x] Custom SVG orthogonal path rendering with proper UML notation
+- [x] Anchor point auto-selection based on relative element positions
 - [ ] Editable multiplicity labels
-- [x] Anchor point selection (which side of class box) - auto-calculated
 
 #### Canvas
-- [x] Zoom in/out (scroll wheel + Ctrl/Cmd)
-- [x] Pan (Shift+drag or middle mouse)
+- [x] Zoom in/out (Ctrl/Cmd + scroll wheel)
+- [x] Pan (Shift+drag, middle mouse, or scroll)
 - [x] Dot grid background (retro aesthetic)
 
 #### Canvas Notes
@@ -162,14 +216,15 @@ type DiagramElement = ClassElement | NoteElement;
 - [x] Edit note content (double-click)
 
 #### Persistence
-- [x] Auto-save to IndexedDB
+- [x] Auto-save to IndexedDB (500ms debounce)
 - [x] Multiple diagrams per project
-- [x] Sidebar file tree (flat, folders not yet implemented)
+- [x] Sidebar diagram list with create/rename/delete
 - [x] Remember and restore last opened diagram
 
 #### History
-- [x] Full undo/redo stack
+- [x] Full undo/redo stack (50 action limit, per-diagram)
 - [x] Keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z
+- [x] History preserved when switching diagrams within session
 
 ### Phase 2
 
@@ -184,10 +239,8 @@ type DiagramElement = ClassElement | NoteElement;
 - [ ] Installable as app
 - [ ] App manifest with icons
 
-#### Additional Relationship Types
-- [x] Aggregation (hollow diamond)
-- [x] Composition (filled diamond)
-- [x] Implementation (dashed line with arrow)
+#### Organization
+- [ ] Nested folder organization in sidebar (backend exists)
 
 ### Future Phases
 
@@ -235,9 +288,8 @@ type DiagramElement = ClassElement | NoteElement;
 |----------|--------|
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` / `Ctrl+Y` | Redo |
-| `Ctrl+S` | Save/Export |
-| `Delete` / `Backspace` | Delete selected element |
-| `Escape` | Cancel current action / Deselect |
+| `Delete` / `Backspace` | Delete selected element(s) |
+| `Escape` | Deselect all |
 
 ---
 
@@ -246,55 +298,58 @@ type DiagramElement = ClassElement | NoteElement;
 ```
 src/
 ├── lib/
+│   ├── actions/
+│   │   └── draggable.svelte.ts  # Svelte action for drag-and-drop
 │   ├── components/
 │   │   ├── canvas/
 │   │   │   ├── Canvas.svelte
 │   │   │   └── Grid.svelte
 │   │   ├── elements/
 │   │   │   ├── ClassBox.svelte
-│   │   │   ├── AttributeList.svelte
-│   │   │   ├── MethodList.svelte
+│   │   │   ├── AttributeRow.svelte
+│   │   │   ├── MethodRow.svelte
+│   │   │   ├── InlineEdit.svelte
+│   │   │   ├── VisibilityIcon.svelte
 │   │   │   └── NoteBox.svelte
+│   │   ├── header/
+│   │   │   └── Header.svelte
 │   │   ├── relationships/
-│   │   │   ├── RelationshipLine.svelte
-│   │   │   └── AnchorPoint.svelte
+│   │   │   ├── RelationshipLayer.svelte
+│   │   │   └── RelationshipLine.svelte
 │   │   ├── sidebar/
 │   │   │   ├── Sidebar.svelte
-│   │   │   └── FileTree.svelte
+│   │   │   └── DiagramItem.svelte
 │   │   ├── toolbar/
 │   │   │   └── Toolbar.svelte
-│   │   └── ui/
-│   │       ├── Button.svelte
-│   │       ├── Input.svelte
-│   │       └── Modal.svelte
+│   │   ├── ui/
+│   │   │   └── RelationshipModal.svelte
+│   │   └── DiagramView.svelte
 │   ├── stores/
 │   │   ├── project.svelte.ts
 │   │   ├── diagram.svelte.ts
 │   │   ├── selection.svelte.ts
-│   │   └── history.svelte.ts
+│   │   ├── history.svelte.ts
+│   │   └── index.ts
 │   ├── services/
-│   │   ├── storage.ts        # IndexedDB operations
-│   │   ├── export/
-│   │   │   ├── json.ts
-│   │   │   ├── svg.ts
-│   │   │   └── png.ts
-│   │   └── import/
-│   │       └── json.ts
+│   │   └── storage.ts        # IndexedDB operations
 │   ├── types/
 │   │   ├── diagram.ts
 │   │   ├── elements.ts
-│   │   └── relationships.ts
+│   │   ├── geometry.ts
+│   │   ├── relationships.ts
+│   │   └── index.ts
 │   └── utils/
 │       ├── geometry.ts       # SVG path calculations
 │       ├── id.ts             # UUID generation
-│       └── keyboard.ts       # Shortcut handling
+│       ├── keyboard.ts       # Shortcut handling
+│       └── index.ts
 ├── routes/
 │   ├── +layout.svelte
+│   ├── +layout.ts            # Prerender config (ssr=false)
 │   ├── +page.svelte
-│   └── +layout.ts            # Prerender config
-├── app.css
-├── app.html
-└── service-worker.ts
+│   └── layout.css            # Global styles (Tailwind)
+├── app.d.ts
+└── app.html
 ```
 
 ---
@@ -302,19 +357,21 @@ src/
 ## Storage Schema (IndexedDB)
 
 ```
-Database: board-diagrams
+Database: board-diagrams (version 1)
 
 Object Stores:
-├── projects
+├── projects (keyPath: id)
 │   └── { id, name, createdAt, updatedAt }
-├── diagrams
-│   └── { id, projectId, name, type, viewport, createdAt, updatedAt }
-├── elements
-│   └── { id, diagramId, type, name, position, attributes?, methods?, content? }
-├── relationships
-│   └── { id, diagramId, type, sourceId, targetId, ... }
-└── folders
-    └── { id, projectId, name, parentId? }
+├── diagrams (keyPath: id, index: projectId)
+│   └── { id, projectId, name, type, elements[], relationships[], viewport, createdAt, updatedAt }
+├── folders (keyPath: id, indexes: projectId, parentId)
+│   └── { id, projectId, name, parentId }
+└── settings (keyPath: key)
+    └── { key, value }
+
+Notes:
+- Elements and relationships are stored inline within diagrams (not separate stores)
+- Settings used for lastProjectId, lastDiagramId
 ```
 
 ---
@@ -367,30 +424,29 @@ Object Stores:
 
 ### Unit Tests (Vitest)
 
-Tests are co-located with source files using `.test.ts` suffix.
+Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:unit` (watch mode).
 
 #### Utility Tests
-- [ ] `utils/geometry.ts` - SVG path calculations, anchor point math, line intersections
+- [ ] `utils/geometry.ts` - SVG path calculations, anchor point math, orthogonal routing
 - [ ] `utils/id.ts` - UUID generation uniqueness
+- [ ] `utils/keyboard.ts` - Shortcut matching
 
 #### Store Tests
-- [ ] `stores/history.svelte.ts` - Undo/redo stack push, pop, clear operations
-- [ ] `stores/diagram.svelte.ts` - Element add/remove/update operations
+- [ ] `stores/history.svelte.ts` - Undo/redo stack, two-phase commit, diagram switching
+- [ ] `stores/diagram.svelte.ts` - Element/relationship CRUD, viewport, auto-save
 - [ ] `stores/selection.svelte.ts` - Selection state management
+- [ ] `stores/project.svelte.ts` - Project/diagram CRUD
 
 #### Service Tests
 - [ ] `services/storage.ts` - IndexedDB CRUD operations (using fake-indexeddb)
-- [ ] `services/export/json.ts` - Diagram serialization/deserialization
-- [ ] `services/export/svg.ts` - SVG string generation
-- [ ] `services/import/json.ts` - Import validation and error handling
 
 ---
 
 ## Interaction Design
 
 ### Canvas Interactions
-- **Panning**: Drag on empty canvas, or scroll
-- **Zoom**: Scroll wheel to zoom in/out
+- **Panning**: Shift+drag or middle mouse, or scroll (without modifiers)
+- **Zoom**: Ctrl/Cmd + scroll wheel to zoom in/out
 - **Grid**: No snap-to-grid in MVP (future phase)
 - **Grid Style**: Dot pattern (like dot paper)
 
@@ -527,50 +583,55 @@ Tests are co-located with source files using `.test.ts` suffix.
 - SvelteKit 2 + Svelte 5 with runes (`$state`, `$derived`, `$effect`)
 - TypeScript strict mode
 - Tailwind CSS v4
-- Static adapter for client-only PWA
+- Static adapter for client-only app (prerender=true, ssr=false)
 
 **Types** (`src/lib/types/`):
 - `geometry.ts` - Point, Rect, Size, Viewport
-- `elements.ts` - ClassElement, NoteElement, Attribute, Method, Parameter
-- `relationships.ts` - Relationship, AnchorPoint, RelationshipType
+- `elements.ts` - ClassElement, NoteElement, Attribute, Method, Parameter, type guards
+- `relationships.ts` - Relationship, AnchorPoint, RelationshipType, RelationshipAnchors
 - `diagram.ts` - Project, Diagram, Folder
 
 **Utilities** (`src/lib/utils/`):
 - `id.ts` - UUID generation via `crypto.randomUUID()`
-- `geometry.ts` - Anchor positioning, orthogonal path generation, coordinate transforms
-- `keyboard.ts` - Keyboard shortcut matching
+- `geometry.ts` - Anchor positioning, orthogonal path generation, coordinate transforms, rect calculations
+- `keyboard.ts` - Keyboard shortcut matching with modifiers
+
+**Actions** (`src/lib/actions/`):
+- `draggable.svelte.ts` - Svelte action for multi-element drag-and-drop with viewport transforms
 
 **Services** (`src/lib/services/`):
 - `storage.ts` - IndexedDB wrapper (projects, diagrams, folders, settings stores)
 
 **Stores** (`src/lib/stores/`) - Svelte 5 runes:
-- `project.svelte.ts` - Project/diagram CRUD, initialization, auto-save
-- `diagram.svelte.ts` - Elements, relationships, viewport, integrated undo/redo
+- `project.svelte.ts` - Project/diagram/folder CRUD, initialization, last-opened restore
+- `diagram.svelte.ts` - Elements, relationships, viewport, attribute/method CRUD, auto-save
 - `selection.svelte.ts` - Multi-selection state management
-- `history.svelte.ts` - Per-diagram undo/redo manager (50 action limit)
+- `history.svelte.ts` - Per-diagram undo/redo manager (50 action limit, two-phase commit)
 
 **Components** (`src/lib/components/`):
 - `canvas/` - Canvas with CSS transform zoom/pan, dot grid background
-- `elements/` - ClassBox, NoteBox with inline editing, drag-and-drop
-- `relationships/` - SVG orthogonal lines with polygon/polyline arrow heads
-- `sidebar/` - Project tree, diagram list, rename/delete
-- `toolbar/` - Element creation buttons, zoom controls
+- `elements/` - ClassBox, NoteBox, AttributeRow, MethodRow, InlineEdit, VisibilityIcon
+- `relationships/` - RelationshipLayer, RelationshipLine with orthogonal routing
+- `sidebar/` - Sidebar with project name editing, DiagramItem with rename/delete
+- `toolbar/` - Element creation buttons, zoom controls, relationship button
 - `header/` - Logo, undo/redo buttons, keyboard shortcut handler
 - `ui/` - RelationshipModal for creating connections
+- `DiagramView.svelte` - Orchestrates canvas, elements, and relationships
 
 **Key Technical Decisions:**
-- Arrow heads use `<polygon>`/`<polyline>` instead of SVG markers for cross-browser compatibility (Chrome has marker bugs with CSS transforms)
+- Arrow heads use `<polygon>`/`<polyline>` instead of SVG markers for cross-browser compatibility
 - Orthogonal (90-degree) line routing between elements
 - Auto-anchor selection based on relative element positions
 - Debounced auto-save (500ms) to IndexedDB
+- MutationObserver tracks element dimensions for relationship positioning
 
 ### Remaining for MVP
 - Editable multiplicity labels on relationships
-- Nested folder organization in sidebar
 
 ### Phase 2 (Not Started)
 - Export/Import (JSON, SVG, PNG)
 - PWA service worker and manifest
+- Nested folder organization UI (backend exists)
 
 ---
 
