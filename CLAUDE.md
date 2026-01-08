@@ -15,13 +15,14 @@ bun run dev          # Start dev server
 bun run build        # Build static site (output: /build)
 bun run preview      # Preview production build
 bun run check        # Type-check with svelte-check
+bun run check:watch  # Type-check in watch mode
 bun run test         # Run all tests once
 bun run test:unit    # Run tests in watch mode
 ```
 
 Run a single test file:
 ```bash
-bun run test:unit src/demo.spec.ts
+bun run test:unit src/lib/utils/geometry.spec.ts
 ```
 
 ## Tech Stack
@@ -31,7 +32,7 @@ bun run test:unit src/demo.spec.ts
 - **TypeScript** in strict mode
 - **Tailwind CSS v4**
 - **Vitest** for testing (tests require assertions via `requireAssertions: true`)
-- **IndexedDB** for persistence (via idb or Dexie)
+- **IndexedDB** for persistence (raw API in `services/storage.ts`)
 
 ## Architecture
 
@@ -53,8 +54,19 @@ Stores use Svelte 5 runes in `.svelte.ts` files:
 - `selection.svelte.ts` - Selected elements
 - `history.svelte.ts` - Undo/redo stack
 
-### Export Plugin Pattern
-Exporters in `services/export/` implement a common interface for JSON, SVG, and PNG formats.
+### History Two-Phase Commit Pattern
+The undo/redo system uses a two-phase commit to capture the state BEFORE changes:
+1. `updateState()` - captures a pre-change snapshot (if none pending) then applies changes
+2. `push(description)` - stores the pending snapshot to the undo stack
+
+This ensures undo restores to the state before the action - not after. Example:
+```typescript
+historyManager.updateState({ elements: newElements });
+historyManager.push('Add element');
+```
+
+### Export Plugin Pattern (Phase 2)
+Exporters will implement a common interface for JSON, SVG, and PNG formats.
 
 ## Code Style
 
