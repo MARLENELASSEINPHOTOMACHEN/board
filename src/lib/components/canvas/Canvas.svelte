@@ -3,7 +3,6 @@
 	import Grid from './Grid.svelte';
 	import { diagram } from '$lib/stores';
 	import { selection } from '$lib/stores';
-	import { setCanvasContainer } from './context';
 
 	interface Props {
 		children?: Snippet;
@@ -14,11 +13,6 @@
 	let containerRef: HTMLDivElement | undefined = $state();
 	let isPanning = $state(false);
 	let lastPanPosition = $state({ x: 0, y: 0 });
-
-	$effect(() => {
-		setCanvasContainer(containerRef ?? null);
-		return () => setCanvasContainer(null);
-	});
 
 	function handleWheel(event: WheelEvent) {
 		event.preventDefault();

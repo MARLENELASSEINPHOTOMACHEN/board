@@ -1,12 +1,9 @@
-// module-level store for canvas container rect
-// used by components that need coordinate conversion but may render outside Canvas
+// canvas container query - centralized to single location
+// if the selector ever changes, only this file needs updating
 
-let containerRef: HTMLDivElement | null = null;
-
-export function setCanvasContainer(el: HTMLDivElement | null): void {
-	containerRef = el;
-}
+const CANVAS_SELECTOR = '[role="application"]';
 
 export function getCanvasContainerRect(): DOMRect | null {
-	return containerRef?.getBoundingClientRect() ?? null;
+	const container = document.querySelector(CANVAS_SELECTOR);
+	return container?.getBoundingClientRect() ?? null;
 }
