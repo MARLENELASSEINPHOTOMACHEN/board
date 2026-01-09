@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { diagram, selection } from '$lib/stores';
+	import { diagram, project, selection } from '$lib/stores';
 	import { matchesShortcut, SHORTCUTS } from '$lib/utils';
+	import InlineEdit from '$lib/components/elements/InlineEdit.svelte';
 
 	function handleUndo() {
 		diagram.undo();
@@ -45,7 +46,11 @@
 		<h1 class="font-bold text-lg text-stone-800 font-mono">board.</h1>
 		{#if diagram.diagram}
 			<span class="text-stone-400">|</span>
-			<span class="text-sm text-stone-600">{diagram.diagram.name}</span>
+			<InlineEdit
+				value={diagram.diagram.name}
+				onchange={(name) => diagram.diagram && project.updateDiagram(diagram.diagram.id, { name })}
+				class="text-sm text-stone-600"
+			/>
 		{/if}
 	</div>
 

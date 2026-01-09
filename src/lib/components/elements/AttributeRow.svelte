@@ -26,14 +26,14 @@
 		value={attribute.name}
 		onchange={(name) => onupdate({ name })}
 		placeholder="name"
-		class="flex-shrink-0"
+		class="flex-shrink-0 whitespace-nowrap"
 	/>
 	<span class="text-stone-400">:</span>
 	<InlineEdit
 		value={attribute.dataType}
 		onchange={(dataType) => onupdate({ dataType })}
 		placeholder="type"
-		class="flex-1 text-stone-600"
+		class="flex-1 text-stone-600 whitespace-nowrap"
 	/>
 	<button
 		type="button"

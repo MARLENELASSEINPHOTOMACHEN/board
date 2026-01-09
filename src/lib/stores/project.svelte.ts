@@ -136,13 +136,17 @@ function createProjectStore() {
 			if (idx === -1) return;
 
 			const updated = {
-				...diagrams[idx],
+				...$state.snapshot(diagrams[idx]),
 				...updates,
 				updatedAt: new Date()
 			};
 
 			await storage.saveDiagram(updated);
 			diagrams = diagrams.map((d) => (d.id === diagramId ? updated : d));
+
+			if (diagramStore.diagram?.id === diagramId && updates.name) {
+				diagramStore.updateName(updates.name);
+			}
 		},
 
 		async deleteDiagram(diagramId: string) {

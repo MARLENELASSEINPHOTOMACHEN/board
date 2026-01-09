@@ -56,12 +56,13 @@
 		bind:value={editValue}
 		onblur={commitEdit}
 		onkeydown={handleKeydown}
-		class="bg-white border border-stone-400 px-1 py-0 text-sm font-mono outline-none focus:border-stone-600 {className}"
+		class="min-w-[4ch] bg-white/50 rounded-sm border-none p-0 outline-none ring-1 ring-stone-300 whitespace-nowrap [field-sizing:content] {className}"
 		{placeholder}
 	/>
 {:else}
 	<span
 		class="cursor-text select-none {className}"
+		class:opacity-50={!value}
 		onmousedown={(e) => e.stopPropagation()}
 		ondblclick={startEdit}
 		role="button"

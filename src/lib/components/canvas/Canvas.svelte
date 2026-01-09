@@ -61,7 +61,7 @@
 
 <div
 	bind:this={containerRef}
-	class="relative w-full h-full overflow-hidden bg-stone-100"
+	class="relative w-full h-full overflow-hidden bg-stone-100 select-none"
 	class:cursor-grabbing={isPanning}
 	onwheel={handleWheel}
 	onmousedown={handleMouseDown}

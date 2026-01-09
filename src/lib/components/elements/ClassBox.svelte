@@ -131,7 +131,7 @@
 			value={element.name}
 			onchange={updateName}
 			placeholder="ClassName"
-			class="font-bold text-stone-800"
+			class="font-bold text-stone-800 whitespace-nowrap"
 		/>
 	</div>
 

@@ -321,6 +321,12 @@ function createDiagramStore() {
 				zoom: newZoom
 			};
 			scheduleAutoSave();
+		},
+
+		updateName(name: string) {
+			if (!currentDiagram) return;
+			currentDiagram = { ...currentDiagram, name };
+			scheduleAutoSave();
 		}
 	};
 }
