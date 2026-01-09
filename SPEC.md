@@ -69,23 +69,13 @@ interface Viewport {
 }
 ```
 
-### Project
-```typescript
-interface Project {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
 ### Folder
 ```typescript
 interface Folder {
   id: string;
-  projectId: string;
   name: string;
   parentId: string | null;
+  deletedAt: Date | null;
 }
 ```
 
@@ -95,7 +85,7 @@ type DiagramType = 'class'; // Future: 'sequence' | 'er' | 'usecase'
 
 interface Diagram {
   id: string;
-  projectId: string;
+  folderId: string | null;
   name: string;
   type: DiagramType;
   elements: DiagramElement[];
@@ -103,6 +93,7 @@ interface Diagram {
   viewport: Viewport;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 ```
 
@@ -327,14 +318,16 @@ src/
 │   │   │   └── MultiplicityLabels.svelte
 │   │   ├── sidebar/
 │   │   │   ├── Sidebar.svelte
-│   │   │   └── DiagramItem.svelte
+│   │   │   ├── DiagramItem.svelte
+│   │   │   ├── FolderItem.svelte
+│   │   │   └── TrashSection.svelte
 │   │   ├── toolbar/
 │   │   │   └── Toolbar.svelte
 │   │   ├── ui/
 │   │   │   └── TypePicker.svelte
 │   │   └── DiagramView.svelte
 │   ├── stores/
-│   │   ├── project.svelte.ts
+│   │   ├── workspace.svelte.ts   # Diagram/folder CRUD, trash
 │   │   ├── diagram.svelte.ts
 │   │   ├── selection.svelte.ts
 │   │   ├── history.svelte.ts
@@ -370,18 +363,17 @@ src/
 Database: board-diagrams (version 1)
 
 Object Stores:
-├── projects (keyPath: id)
-│   └── { id, name, createdAt, updatedAt }
-├── diagrams (keyPath: id, index: projectId)
-│   └── { id, projectId, name, type, elements[], relationships[], viewport, createdAt, updatedAt }
-├── folders (keyPath: id, indexes: projectId, parentId)
-│   └── { id, projectId, name, parentId }
+├── diagrams (keyPath: id)
+│   └── { id, folderId, name, type, elements[], relationships[], viewport, createdAt, updatedAt, deletedAt }
+├── folders (keyPath: id, index: parentId)
+│   └── { id, name, parentId, deletedAt }
 └── settings (keyPath: key)
     └── { key, value }
 
 Notes:
 - Elements and relationships are stored inline within diagrams (not separate stores)
-- Settings used for lastProjectId, lastDiagramId
+- Settings used for lastDiagramId, folderExpandState, trashExpanded
+- Soft delete via deletedAt field (null = active, Date = trashed)
 ```
 
 ---
@@ -401,7 +393,7 @@ Notes:
 - Project setup with SvelteKit + TypeScript + Tailwind
 - Basic canvas with zoom/pan
 - IndexedDB storage service
-- Project/diagram data structures
+- Diagram/folder data structures
 
 ### Milestone 2: Class Elements
 - ClassBox component with full editing
@@ -415,10 +407,10 @@ Notes:
 - Anchor point system
 - UML notation (arrows, diamonds)
 
-### Milestone 4: Project Management
-- Sidebar file tree
-- Multiple diagrams
-- Create/rename/delete diagrams
+### Milestone 4: Workspace Management
+- Sidebar with folders and diagrams
+- Drag-and-drop organization
+- Create/rename/delete/trash diagrams and folders
 - Undo/redo history
 
 ### Milestone 5: Export & PWA
@@ -445,7 +437,7 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 - [ ] `stores/history.svelte.ts` - Undo/redo stack, two-phase commit, diagram switching
 - [ ] `stores/diagram.svelte.ts` - Element/relationship CRUD, viewport, auto-save
 - [ ] `stores/selection.svelte.ts` - Selection state management
-- [ ] `stores/project.svelte.ts` - Project/diagram CRUD
+- [ ] `stores/workspace.svelte.ts` - Diagram/folder CRUD, trash operations
 
 #### Service Tests
 - [ ] `services/storage.ts` - IndexedDB CRUD operations (using fake-indexeddb)
@@ -546,10 +538,11 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 Note: Relationships are created via drag-to-connect from edge hotspots, not toolbar button.
 
 ### Sidebar
-- **Organization**: Nested folders for diagrams
+- **Organization**: Nested folders for diagrams with drag-and-drop
 - **Navigation**: Simple scroll (no search/filter in MVP)
-- **Project name**: Edit via sidebar (not header click)
-- **Diagram operations**: Create, rename, delete diagrams
+- **Diagram operations**: Create, rename, trash diagrams
+- **Folder operations**: Create, rename, trash folders
+- **Trash section**: View and restore/permanently delete trashed items
 
 ### Canvas Notes
 - Plain text note boxes that can be placed on canvas
@@ -619,7 +612,7 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 - `geometry.ts` - Point, Rect, Size, Viewport
 - `elements.ts` - ClassElement, NoteElement, Attribute, Method, Parameter, type guards
 - `relationships.ts` - Relationship, AnchorPoint, RelationshipType, RelationshipAnchors
-- `diagram.ts` - Project, Diagram, Folder
+- `diagram.ts` - Diagram, Folder (with soft delete support)
 
 **Utilities** (`src/lib/utils/`):
 - `id.ts` - UUID generation via `crypto.randomUUID()`
@@ -630,10 +623,10 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 - `draggable.svelte.ts` - Svelte action for multi-element drag-and-drop with viewport transforms
 
 **Services** (`src/lib/services/`):
-- `storage.ts` - IndexedDB wrapper (projects, diagrams, folders, settings stores)
+- `storage.ts` - IndexedDB wrapper (diagrams, folders, settings stores)
 
 **Stores** (`src/lib/stores/`) - Svelte 5 runes:
-- `project.svelte.ts` - Project/diagram/folder CRUD, initialization, last-opened restore
+- `workspace.svelte.ts` - Diagram/folder CRUD, trash operations, initialization, last-opened restore
 - `diagram.svelte.ts` - Elements, relationships, viewport, attribute/method CRUD, auto-save
 - `selection.svelte.ts` - Multi-selection state management
 - `history.svelte.ts` - Per-diagram undo/redo manager (50 action limit, two-phase commit)
@@ -643,7 +636,7 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 - `canvas/` - Canvas with CSS transform zoom/pan, dot grid background, connection previews
 - `elements/` - ClassBox, NoteBox, AttributeRow, MethodRow, InlineEdit, VisibilityIcon, EdgeHotspots
 - `relationships/` - RelationshipLayer, RelationshipLine, RelationshipHandles, MultiplicityLabels
-- `sidebar/` - Sidebar with project name editing, DiagramItem with rename/delete
+- `sidebar/` - Sidebar with folders, DiagramItem, FolderItem, TrashSection (drag-and-drop organization)
 - `toolbar/` - Element creation buttons, zoom controls
 - `header/` - Logo, diagram name (inline editable), undo/redo buttons, keyboard shortcut handler
 - `ui/` - TypePicker dropdown for relationship type selection
@@ -661,7 +654,6 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 ### Phase 2 (Not Started)
 - Export/Import (JSON, SVG, PNG)
 - PWA service worker and manifest
-- Nested folder organization UI (backend exists)
 
 ---
 
