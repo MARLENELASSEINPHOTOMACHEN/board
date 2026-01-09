@@ -1,0 +1,353 @@
+import type { Diagram, Folder } from '$lib/types';
+import { generateId } from '$lib/utils';
+import { storage } from '$lib/services/storage';
+import { diagram as diagramStore } from './diagram.svelte';
+
+function createWorkspaceStore() {
+	let diagrams = $state<Diagram[]>([]);
+	let folders = $state<Folder[]>([]);
+	let isLoading = $state(true);
+	let folderExpandState = $state<Record<string, boolean>>({});
+	let trashExpanded = $state(false);
+
+	return {
+		get diagrams(): Diagram[] {
+			return diagrams;
+		},
+
+		get folders(): Folder[] {
+			return folders;
+		},
+
+		get isLoading() {
+			return isLoading;
+		},
+
+		get activeDiagrams(): Diagram[] {
+			return diagrams.filter((d) => d.deletedAt == null);
+		},
+
+		get activeFolders(): Folder[] {
+			return folders.filter((f) => f.deletedAt == null);
+		},
+
+		get trashedDiagrams(): Diagram[] {
+			return diagrams.filter((d) => d.deletedAt != null);
+		},
+
+		get trashedFolders(): Folder[] {
+			return folders.filter((f) => f.deletedAt != null);
+		},
+
+		get rootDiagrams(): Diagram[] {
+			return diagrams.filter((d) => d.deletedAt == null && d.folderId == null);
+		},
+
+		get trashExpanded() {
+			return trashExpanded;
+		},
+
+		getDiagramsByFolder(folderId: string): Diagram[] {
+			return diagrams.filter((d) => d.deletedAt == null && d.folderId === folderId);
+		},
+
+		isFolderExpanded(folderId: string): boolean {
+			return folderExpandState[folderId] ?? true;
+		},
+
+		toggleFolderExpanded(folderId: string) {
+			folderExpandState = {
+				...folderExpandState,
+				[folderId]: !this.isFolderExpanded(folderId)
+			};
+			storage.setSetting('folderExpandState', $state.snapshot(folderExpandState));
+		},
+
+		toggleTrashExpanded() {
+			trashExpanded = !trashExpanded;
+			storage.setSetting('trashExpanded', trashExpanded);
+		},
+
+		async initialize() {
+			isLoading = true;
+			try {
+				const savedExpandState =
+					await storage.getSetting<Record<string, boolean>>('folderExpandState');
+				if (savedExpandState) {
+					folderExpandState = savedExpandState;
+				}
+				const savedTrashExpanded = await storage.getSetting<boolean>('trashExpanded');
+				if (savedTrashExpanded != null) {
+					trashExpanded = savedTrashExpanded;
+				}
+
+				diagrams = await storage.getAllDiagrams();
+				folders = await storage.getAllFolders();
+
+				if (diagrams.length === 0) {
+					await this.createDiagram('Untitled Diagram');
+					return;
+				}
+
+				const lastDiagramId = await storage.getSetting<string>('lastDiagramId');
+				const activeDiagrams = this.activeDiagrams;
+				if (lastDiagramId) {
+					const diagramToLoad = activeDiagrams.find((d) => d.id === lastDiagramId);
+					if (diagramToLoad) {
+						await this.openDiagram(lastDiagramId);
+					} else if (activeDiagrams.length > 0) {
+						await this.openDiagram(activeDiagrams[0].id);
+					}
+				} else if (activeDiagrams.length > 0) {
+					await this.openDiagram(activeDiagrams[0].id);
+				}
+			} finally {
+				isLoading = false;
+			}
+		},
+
+		async createDiagram(name: string, folderId: string | null = null): Promise<Diagram> {
+			const newDiagram: Diagram = {
+				id: generateId(),
+				folderId,
+				name,
+				type: 'class',
+				elements: [],
+				relationships: [],
+				viewport: { x: 0, y: 0, zoom: 1 },
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				deletedAt: null
+			};
+
+			await storage.saveDiagram(newDiagram);
+			diagrams = [...diagrams, newDiagram];
+
+			return newDiagram;
+		},
+
+		async openDiagram(diagramId: string) {
+			const diagramData = await storage.getDiagram(diagramId);
+			if (!diagramData) throw new Error(`Diagram ${diagramId} not found`);
+
+			diagramStore.load(diagramData);
+			await storage.setSetting('lastDiagramId', diagramId);
+		},
+
+		async updateDiagram(diagramId: string, updates: Partial<Pick<Diagram, 'name'>>) {
+			const idx = diagrams.findIndex((d) => d.id === diagramId);
+			if (idx === -1) return;
+
+			const updated = {
+				...$state.snapshot(diagrams[idx]),
+				...updates,
+				updatedAt: new Date()
+			};
+
+			await storage.saveDiagram(updated);
+			diagrams = diagrams.map((d) => (d.id === diagramId ? updated : d));
+
+			if (diagramStore.diagram?.id === diagramId && updates.name) {
+				diagramStore.updateName(updates.name);
+			}
+		},
+
+		// move diagram to folder (or root if folderId is null)
+		async moveDiagramToFolder(diagramId: string, folderId: string | null) {
+			const idx = diagrams.findIndex((d) => d.id === diagramId);
+			if (idx === -1) return;
+
+			const updated: Diagram = {
+				...$state.snapshot(diagrams[idx]),
+				folderId,
+				updatedAt: new Date()
+			};
+
+			await storage.saveDiagram(updated);
+			diagrams = diagrams.map((d) => (d.id === diagramId ? updated : d));
+		},
+
+		// soft delete - move to trash
+		async trashDiagram(diagramId: string) {
+			const idx = diagrams.findIndex((d) => d.id === diagramId);
+			if (idx === -1) return;
+
+			const updated: Diagram = {
+				...$state.snapshot(diagrams[idx]),
+				deletedAt: new Date(),
+				updatedAt: new Date()
+			};
+
+			await storage.saveDiagram(updated);
+			diagrams = diagrams.map((d) => (d.id === diagramId ? updated : d));
+
+			if (diagramStore.diagram?.id === diagramId) {
+				diagramStore.unload();
+				const activeDiagrams = this.activeDiagrams;
+				if (activeDiagrams.length > 0) {
+					await this.openDiagram(activeDiagrams[0].id);
+				}
+			}
+		},
+
+		async trashFolder(folderId: string) {
+			const folderIdx = folders.findIndex((f) => f.id === folderId);
+			if (folderIdx === -1) return;
+
+			const now = new Date();
+
+			const diagramsInFolder = diagrams.filter((d) => d.folderId === folderId);
+			for (const d of diagramsInFolder) {
+				const updated: Diagram = {
+					...$state.snapshot(d),
+					deletedAt: now,
+					updatedAt: now
+				};
+				await storage.saveDiagram(updated);
+			}
+			diagrams = diagrams.map((d) =>
+				d.folderId === folderId ? { ...d, deletedAt: now, updatedAt: now } : d
+			);
+
+			const updatedFolder: Folder = {
+				...$state.snapshot(folders[folderIdx]),
+				deletedAt: now
+			};
+			await storage.saveFolder(updatedFolder);
+			folders = folders.map((f) => (f.id === folderId ? updatedFolder : f));
+
+			if (diagramStore.diagram && diagramsInFolder.some((d) => d.id === diagramStore.diagram?.id)) {
+				diagramStore.unload();
+				const activeDiagrams = this.activeDiagrams;
+				if (activeDiagrams.length > 0) {
+					await this.openDiagram(activeDiagrams[0].id);
+				}
+			}
+		},
+
+		async restoreDiagram(diagramId: string) {
+			const idx = diagrams.findIndex((d) => d.id === diagramId);
+			if (idx === -1) return;
+
+			const diagram = diagrams[idx];
+
+			// parent folder trashed? move to root instead
+			const parentFolder = diagram.folderId ? folders.find((f) => f.id === diagram.folderId) : null;
+			const parentTrashed = parentFolder?.deletedAt != null;
+
+			const updated: Diagram = {
+				...$state.snapshot(diagram),
+				deletedAt: null,
+				folderId: parentTrashed ? null : diagram.folderId,
+				updatedAt: new Date()
+			};
+
+			await storage.saveDiagram(updated);
+			diagrams = diagrams.map((d) => (d.id === diagramId ? updated : d));
+		},
+
+		async restoreFolder(folderId: string) {
+			const folderIdx = folders.findIndex((f) => f.id === folderId);
+			if (folderIdx === -1) return;
+
+			const now = new Date();
+
+			const updatedFolder: Folder = {
+				...$state.snapshot(folders[folderIdx]),
+				deletedAt: null
+			};
+			await storage.saveFolder(updatedFolder);
+			folders = folders.map((f) => (f.id === folderId ? updatedFolder : f));
+
+			const diagramsInFolder = diagrams.filter(
+				(d) => d.folderId === folderId && d.deletedAt != null
+			);
+			for (const d of diagramsInFolder) {
+				const updated: Diagram = {
+					...$state.snapshot(d),
+					deletedAt: null,
+					updatedAt: now
+				};
+				await storage.saveDiagram(updated);
+			}
+			diagrams = diagrams.map((d) =>
+				d.folderId === folderId && d.deletedAt != null
+					? { ...d, deletedAt: null, updatedAt: now }
+					: d
+			);
+		},
+
+		async permanentlyDeleteDiagram(diagramId: string) {
+			await storage.deleteDiagram(diagramId);
+			diagrams = diagrams.filter((d) => d.id !== diagramId);
+			diagramStore.clearDiagramHistory(diagramId);
+		},
+
+		async permanentlyDeleteFolder(folderId: string) {
+			const diagramsInFolder = diagrams.filter((d) => d.folderId === folderId);
+			for (const d of diagramsInFolder) {
+				await storage.deleteDiagram(d.id);
+				diagramStore.clearDiagramHistory(d.id);
+			}
+			diagrams = diagrams.filter((d) => d.folderId !== folderId);
+
+			await storage.deleteFolder(folderId);
+			folders = folders.filter((f) => f.id !== folderId);
+
+			if (folderId in folderExpandState) {
+				const { [folderId]: _, ...rest } = folderExpandState;
+				folderExpandState = rest;
+				storage.setSetting('folderExpandState', rest);
+			}
+		},
+
+		async emptyTrash() {
+			const trashedDiagrams = this.trashedDiagrams;
+			for (const d of trashedDiagrams) {
+				await storage.deleteDiagram(d.id);
+				diagramStore.clearDiagramHistory(d.id);
+			}
+			diagrams = diagrams.filter((d) => d.deletedAt == null);
+
+			const trashedFolders = this.trashedFolders;
+			const trashedFolderIds = new Set(trashedFolders.map((f) => f.id));
+			for (const f of trashedFolders) {
+				await storage.deleteFolder(f.id);
+			}
+			folders = folders.filter((f) => f.deletedAt == null);
+
+			const cleanedExpandState = Object.fromEntries(
+				Object.entries(folderExpandState).filter(([id]) => !trashedFolderIds.has(id))
+			);
+			if (Object.keys(cleanedExpandState).length !== Object.keys(folderExpandState).length) {
+				folderExpandState = cleanedExpandState;
+				storage.setSetting('folderExpandState', cleanedExpandState);
+			}
+		},
+
+		async createFolder(name: string, parentId: string | null = null): Promise<Folder> {
+			const folder: Folder = {
+				id: generateId(),
+				name,
+				parentId,
+				deletedAt: null
+			};
+
+			await storage.saveFolder(folder);
+			folders = [...folders, folder];
+
+			return folder;
+		},
+
+		async updateFolder(folderId: string, updates: Partial<Pick<Folder, 'name' | 'parentId'>>) {
+			const idx = folders.findIndex((f) => f.id === folderId);
+			if (idx === -1) return;
+
+			const updated = { ...folders[idx], ...updates };
+			await storage.saveFolder(updated);
+			folders = folders.map((f) => (f.id === folderId ? updated : f));
+		}
+	};
+}
+
+export const workspace = createWorkspaceStore();

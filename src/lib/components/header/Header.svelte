@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { diagram, project, selection } from '$lib/stores';
+	import { diagram, workspace, selection } from '$lib/stores';
 	import { matchesShortcut, SHORTCUTS } from '$lib/utils';
 	import InlineEdit from '$lib/components/elements/InlineEdit.svelte';
 
@@ -48,7 +48,7 @@
 			<span class="text-stone-400">|</span>
 			<InlineEdit
 				value={diagram.diagram.name}
-				onchange={(name) => diagram.diagram && project.updateDiagram(diagram.diagram.id, { name })}
+				onchange={(name) => diagram.diagram && workspace.updateDiagram(diagram.diagram.id, { name })}
 				class="text-sm text-stone-600"
 			/>
 		{/if}

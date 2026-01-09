@@ -1,11 +1,10 @@
-import type { Project, Diagram, Folder } from '$lib/types';
+import type { Diagram, Folder } from '$lib/types';
 
 const DB_NAME = 'board-diagrams';
 const DB_VERSION = 1;
-const REQUIRED_STORES = ['projects', 'diagrams', 'folders', 'settings'] as const;
+const REQUIRED_STORES = ['diagrams', 'folders', 'settings'] as const;
 
 interface DBSchema {
-	projects: Project;
 	diagrams: Diagram;
 	folders: Folder;
 	settings: { key: string; value: unknown };
@@ -38,18 +37,12 @@ function openDatabaseInternal(): Promise<IDBDatabase> {
 		request.onupgradeneeded = () => {
 			const db = request.result;
 
-			if (!db.objectStoreNames.contains('projects')) {
-				db.createObjectStore('projects', { keyPath: 'id' });
-			}
-
 			if (!db.objectStoreNames.contains('diagrams')) {
-				const diagramStore = db.createObjectStore('diagrams', { keyPath: 'id' });
-				diagramStore.createIndex('projectId', 'projectId', { unique: false });
+				db.createObjectStore('diagrams', { keyPath: 'id' });
 			}
 
 			if (!db.objectStoreNames.contains('folders')) {
 				const folderStore = db.createObjectStore('folders', { keyPath: 'id' });
-				folderStore.createIndex('projectId', 'projectId', { unique: false });
 				folderStore.createIndex('parentId', 'parentId', { unique: false });
 			}
 
@@ -104,30 +97,9 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
 }
 
 export const storage = {
-	async getAllProjects(): Promise<Project[]> {
-		const store = await getStore('projects', 'readonly');
-		return promisifyRequest(store.getAll());
-	},
-
-	async getProject(id: string): Promise<Project | undefined> {
-		const store = await getStore('projects', 'readonly');
-		return promisifyRequest(store.get(id));
-	},
-
-	async saveProject(project: Project): Promise<void> {
-		const store = await getStore('projects', 'readwrite');
-		await promisifyRequest(store.put(project));
-	},
-
-	async deleteProject(id: string): Promise<void> {
-		const store = await getStore('projects', 'readwrite');
-		await promisifyRequest(store.delete(id));
-	},
-
-	async getDiagramsByProject(projectId: string): Promise<Diagram[]> {
+	async getAllDiagrams(): Promise<Diagram[]> {
 		const store = await getStore('diagrams', 'readonly');
-		const index = store.index('projectId');
-		return promisifyRequest(index.getAll(projectId));
+		return promisifyRequest(store.getAll());
 	},
 
 	async getDiagram(id: string): Promise<Diagram | undefined> {
@@ -145,10 +117,9 @@ export const storage = {
 		await promisifyRequest(store.delete(id));
 	},
 
-	async getFoldersByProject(projectId: string): Promise<Folder[]> {
+	async getAllFolders(): Promise<Folder[]> {
 		const store = await getStore('folders', 'readonly');
-		const index = store.index('projectId');
-		return promisifyRequest(index.getAll(projectId));
+		return promisifyRequest(store.getAll());
 	},
 
 	async saveFolder(folder: Folder): Promise<void> {

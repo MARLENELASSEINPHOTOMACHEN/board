@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Diagram } from '$lib/types';
-	import { project, diagram as diagramStore } from '$lib/stores';
+	import { workspace, diagram as diagramStore } from '$lib/stores';
 
 	interface Props {
 		diagram: Diagram;
@@ -11,12 +11,13 @@
 	let isEditing = $state(false);
 	let editName = $state('');
 	let inputRef: HTMLInputElement | undefined = $state();
+	let isDragging = $state(false);
 
 	const isActive = $derived(diagramStore.diagram?.id === diagram.id);
 
 	function handleClick() {
 		if (!isActive) {
-			project.openDiagram(diagram.id);
+			workspace.openDiagram(diagram.id);
 		}
 	}
 
@@ -29,7 +30,7 @@
 		if (isEditing) {
 			isEditing = false;
 			if (editName && editName !== diagram.name) {
-				project.updateDiagram(diagram.id, { name: editName });
+				workspace.updateDiagram(diagram.id, { name: editName });
 			}
 		}
 	}
@@ -46,9 +47,22 @@
 	}
 
 	async function handleDelete() {
-		if (confirm(`Delete "${diagram.name}"?`)) {
-			await project.deleteDiagram(diagram.id);
+		if (confirm(`Move "${diagram.name}" to trash?`)) {
+			await workspace.trashDiagram(diagram.id);
 		}
+	}
+
+	function handleDragStart(event: DragEvent) {
+		if (event.dataTransfer) {
+			event.dataTransfer.setData('application/x-diagram-id', diagram.id);
+			event.dataTransfer.setData('text/plain', diagram.name);
+			event.dataTransfer.effectAllowed = 'move';
+		}
+		isDragging = true;
+	}
+
+	function handleDragEnd() {
+		isDragging = false;
 	}
 
 	$effect(() => {
@@ -62,11 +76,15 @@
 <div
 	class="group flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-stone-100 rounded"
 	class:bg-stone-200={isActive}
+	class:opacity-50={isDragging}
 	onclick={handleClick}
 	ondblclick={startRename}
 	role="button"
 	tabindex="0"
 	onkeydown={(e) => e.key === 'Enter' && handleClick()}
+	draggable="true"
+	ondragstart={handleDragStart}
+	ondragend={handleDragEnd}
 >
 	<span class="text-stone-400 text-sm">📄</span>
 

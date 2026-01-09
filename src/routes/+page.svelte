@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { project } from '$lib/stores';
+	import { workspace } from '$lib/stores';
 	import { Sidebar } from '$lib/components/sidebar';
 	import { Header } from '$lib/components/header';
 	import { Toolbar } from '$lib/components/toolbar';
 	import DiagramView from '$lib/components/DiagramView.svelte';
 
 	onMount(() => {
-		project.initialize();
+		workspace.initialize();
 	});
 </script>
 
@@ -18,7 +18,7 @@
 		<Sidebar />
 
 		<main class="flex-1 relative overflow-hidden">
-			{#if project.isLoading}
+			{#if workspace.isLoading}
 				<div class="absolute inset-0 flex items-center justify-center">
 					<p class="text-stone-500">Loading...</p>
 				</div>

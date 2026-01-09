@@ -6,7 +6,7 @@ export type DiagramType = 'class';
 
 export interface Diagram {
 	id: string;
-	projectId: string;
+	folderId: string | null;
 	name: string;
 	type: DiagramType;
 	elements: DiagramElement[];
@@ -14,18 +14,12 @@ export interface Diagram {
 	viewport: Viewport;
 	createdAt: Date;
 	updatedAt: Date;
-}
-
-export interface Project {
-	id: string;
-	name: string;
-	createdAt: Date;
-	updatedAt: Date;
+	deletedAt: Date | null;
 }
 
 export interface Folder {
 	id: string;
-	projectId: string;
 	name: string;
 	parentId: string | null;
+	deletedAt: Date | null;
 }
