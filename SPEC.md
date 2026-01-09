@@ -199,11 +199,14 @@ function isNoteElement(element: DiagramElement): element is NoteElement;
 - [x] Delete elements (keyboard: Delete/Backspace)
 
 #### Relationships
-- [x] Create relationships between classes (via modal dialog)
+- [x] Drag-to-connect relationship creation (edge hotspots appear on hover)
 - [x] Relationship types: association, inheritance, implementation, aggregation, composition
 - [x] Custom SVG orthogonal path rendering with proper UML notation
 - [x] Anchor point auto-selection based on relative element positions
-- [ ] Editable multiplicity labels
+- [x] Type picker dropdown at drop location
+- [x] Editable multiplicity labels (click to edit inline)
+- [x] Draggable anchor points for adjusting connection sides
+- [x] Double-click relationship line to change type
 
 #### Canvas
 - [x] Zoom in/out (Ctrl/Cmd + scroll wheel)
@@ -255,7 +258,7 @@ function isNoteElement(element: DiagramElement): element is NoteElement;
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Header: Logo, Project Name, Undo/Redo, Export          │
+│  Header: Logo, Diagram Name (editable), Undo/Redo, Export│
 ├──────────┬──────────────────────────────────────────────┤
 │          │                                              │
 │  Sidebar │              Canvas                          │
@@ -303,32 +306,39 @@ src/
 │   ├── components/
 │   │   ├── canvas/
 │   │   │   ├── Canvas.svelte
-│   │   │   └── Grid.svelte
+│   │   │   ├── Grid.svelte
+│   │   │   ├── ConnectionPreview.svelte
+│   │   │   ├── AnchorAdjustmentPreview.svelte
+│   │   │   └── context.ts       # Canvas container ref for coordinate conversion
 │   │   ├── elements/
 │   │   │   ├── ClassBox.svelte
 │   │   │   ├── AttributeRow.svelte
 │   │   │   ├── MethodRow.svelte
 │   │   │   ├── InlineEdit.svelte
 │   │   │   ├── VisibilityIcon.svelte
-│   │   │   └── NoteBox.svelte
+│   │   │   ├── NoteBox.svelte
+│   │   │   └── EdgeHotspots.svelte
 │   │   ├── header/
 │   │   │   └── Header.svelte
 │   │   ├── relationships/
 │   │   │   ├── RelationshipLayer.svelte
-│   │   │   └── RelationshipLine.svelte
+│   │   │   ├── RelationshipLine.svelte
+│   │   │   ├── RelationshipHandles.svelte
+│   │   │   └── MultiplicityLabels.svelte
 │   │   ├── sidebar/
 │   │   │   ├── Sidebar.svelte
 │   │   │   └── DiagramItem.svelte
 │   │   ├── toolbar/
 │   │   │   └── Toolbar.svelte
 │   │   ├── ui/
-│   │   │   └── RelationshipModal.svelte
+│   │   │   └── TypePicker.svelte
 │   │   └── DiagramView.svelte
 │   ├── stores/
 │   │   ├── project.svelte.ts
 │   │   ├── diagram.svelte.ts
 │   │   ├── selection.svelte.ts
 │   │   ├── history.svelte.ts
+│   │   ├── connection.svelte.ts  # Drag-to-connect state
 │   │   └── index.ts
 │   ├── services/
 │   │   └── storage.ts        # IndexedDB operations
@@ -339,7 +349,7 @@ src/
 │   │   ├── relationships.ts
 │   │   └── index.ts
 │   └── utils/
-│       ├── geometry.ts       # SVG path calculations
+│       ├── geometry.ts       # SVG path calculations, coordinate transforms
 │       ├── id.ts             # UUID generation
 │       ├── keyboard.ts       # Shortcut handling
 │       └── index.ts
@@ -467,11 +477,30 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 - **Validation**: None - user responsible for valid names
 
 ### Relationship Creation
-- **Method**: Drag from source class edge to target class
-- **Type selection**: Quick menu appears when drag completes to pick relationship type
-- **Anchor points**: Auto-pick initially based on positions, user can drag to adjust afterward
-- **Line style**: Orthogonal (90-degree angles only, rectilinear routing)
-- **Labels**: Multiplicity labels positioned near source and target endpoints
+
+#### Drag-to-Connect Flow
+1. **Edge hotspots**: Small connection zones appear on element edges when mouse hovers over element
+2. **Start drag**: Click and drag from a hotspot to begin creating a relationship
+3. **Drag preview**: Simple dashed line from source hotspot to cursor while dragging
+4. **Drop target**:
+   - Drop on element body = auto-pick optimal anchor based on relative positions
+   - Drop on specific edge = that edge becomes the anchor point
+5. **Type picker**: Dropdown menu appears at drop location with labeled options (Association, Inheritance, Implementation, Aggregation, Composition)
+6. **Complete**: Select type to create relationship, or click away / Escape to cancel
+
+#### Anchor Point Adjustment
+- After creation, relationship endpoints can be dragged to different sides of connected elements
+- Dragging an endpoint to a different element changes the connection target
+- Visual feedback shows valid drop zones while dragging
+
+#### Multiplicity Labels
+- Click on label area near endpoint to enter inline edit mode
+- Empty by default - only shown when user adds values
+- Position: near source and target endpoints along the line
+
+#### Line Style
+- Orthogonal routing (90-degree angles only, rectilinear)
+- Path recalculates when elements move or anchors change
 
 ### Deletion
 - **Elements**: Instant delete (rely on undo for mistakes)
@@ -511,9 +540,10 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 - Add Class button
 - Add Interface button
 - Add Abstract Class button
-- Add Relationship button
 - Add Note button
 - Zoom controls
+
+Note: Relationships are created via drag-to-connect from edge hotspots, not toolbar button.
 
 ### Sidebar
 - **Organization**: Nested folders for diagrams
@@ -607,16 +637,17 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 - `diagram.svelte.ts` - Elements, relationships, viewport, attribute/method CRUD, auto-save
 - `selection.svelte.ts` - Multi-selection state management
 - `history.svelte.ts` - Per-diagram undo/redo manager (50 action limit, two-phase commit)
+- `connection.svelte.ts` - Drag-to-connect and anchor adjustment state (discriminated union)
 
 **Components** (`src/lib/components/`):
-- `canvas/` - Canvas with CSS transform zoom/pan, dot grid background
-- `elements/` - ClassBox, NoteBox, AttributeRow, MethodRow, InlineEdit, VisibilityIcon
-- `relationships/` - RelationshipLayer, RelationshipLine with orthogonal routing
+- `canvas/` - Canvas with CSS transform zoom/pan, dot grid background, connection previews
+- `elements/` - ClassBox, NoteBox, AttributeRow, MethodRow, InlineEdit, VisibilityIcon, EdgeHotspots
+- `relationships/` - RelationshipLayer, RelationshipLine, RelationshipHandles, MultiplicityLabels
 - `sidebar/` - Sidebar with project name editing, DiagramItem with rename/delete
-- `toolbar/` - Element creation buttons, zoom controls, relationship button
-- `header/` - Logo, undo/redo buttons, keyboard shortcut handler
-- `ui/` - RelationshipModal for creating connections
-- `DiagramView.svelte` - Orchestrates canvas, elements, and relationships
+- `toolbar/` - Element creation buttons, zoom controls
+- `header/` - Logo, diagram name (inline editable), undo/redo buttons, keyboard shortcut handler
+- `ui/` - TypePicker dropdown for relationship type selection
+- `DiagramView.svelte` - Orchestrates canvas, elements, relationships, and connection flow
 
 **Key Technical Decisions:**
 - Arrow heads use `<polygon>`/`<polyline>` instead of SVG markers for cross-browser compatibility
@@ -624,9 +655,8 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 - Auto-anchor selection based on relative element positions
 - Debounced auto-save (500ms) to IndexedDB
 - MutationObserver tracks element dimensions for relationship positioning
-
-### Remaining for MVP
-- Editable multiplicity labels on relationships
+- Module-level store for canvas container rect (coordinate conversion across component boundaries)
+- Discriminated union in connection store prevents invalid state combinations
 
 ### Phase 2 (Not Started)
 - Export/Import (JSON, SVG, PNG)
