@@ -2,6 +2,7 @@
 	import type { NoteElement, Point } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
 	import { draggable } from '$lib/actions';
+	import EdgeHotspots from './EdgeHotspots.svelte';
 
 	interface Props {
 		element: NoteElement;
@@ -13,11 +14,14 @@
 	let isEditing = $state(false);
 	let editContent = $state('');
 	let textareaRef: HTMLTextAreaElement | undefined = $state();
+	let isHovered = $state(false);
 
 	const isSelected = $derived(selection.isSelected(element.id));
+	const showHotspots = $derived(isHovered || isSelected);
 
 	function shouldIgnoreDrag(event: MouseEvent): boolean {
-		return isEditing || event.detail > 1;
+		const target = event.target as HTMLElement;
+		return isEditing || target.tagName === 'BUTTON' || event.detail > 1;
 	}
 
 	function handleDragStart(event: MouseEvent) {
@@ -90,12 +94,15 @@
 			isDragging = false;
 		}
 	}}
+	onmouseenter={() => (isHovered = true)}
+	onmouseleave={() => (isHovered = false)}
 	ondblclick={startEdit}
 	role="button"
 	tabindex="0"
 	aria-label="Note"
 	data-element-id={element.id}
 >
+	<EdgeHotspots elementId={element.id} visible={showHotspots} />
 	{#if isEditing}
 		<textarea
 			bind:this={textareaRef}

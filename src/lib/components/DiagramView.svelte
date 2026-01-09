@@ -1,10 +1,12 @@
 <script lang="ts">
-	import type { Rect } from '$lib/types';
+	import type { Rect, AnchorPoint, RelationshipType, Relationship, Point } from '$lib/types';
 	import { isClassElement, isNoteElement } from '$lib/types';
-	import { diagram, selection } from '$lib/stores';
-	import { Canvas } from './canvas';
+	import { diagram, selection, connection } from '$lib/stores';
+	import { Canvas, ConnectionPreview, AnchorAdjustmentPreview } from './canvas';
 	import { ClassBox, NoteBox } from './elements';
-	import { RelationshipLayer } from './relationships';
+	import { RelationshipLayer, RelationshipHandles, MultiplicityLabels } from './relationships';
+	import { TypePicker } from './ui';
+	import { generateId } from '$lib/utils';
 
 	let elementRects = $state<Map<string, Rect>>(new Map());
 
@@ -38,12 +40,100 @@
 
 		return () => observer.disconnect();
 	});
+
+	// pending connection state for type picker (new relationship)
+	let pendingConnection = $state<{
+		sourceId: string;
+		sourceAnchor: AnchorPoint;
+		targetId: string;
+		targetAnchor: AnchorPoint;
+		position: { x: number; y: number };
+	} | null>(null);
+
+	// editing relationship type state
+	let editingRelationship = $state<{
+		relationshipId: string;
+		position: { x: number; y: number };
+	} | null>(null);
+
+	function handleConnectionComplete(
+		sourceId: string,
+		sourceAnchor: AnchorPoint,
+		targetId: string,
+		targetAnchor: AnchorPoint,
+		screenPosition: Point
+	) {
+		pendingConnection = {
+			sourceId,
+			sourceAnchor,
+			targetId,
+			targetAnchor,
+			position: screenPosition
+		};
+	}
+
+	function handleTypeSelect(type: RelationshipType) {
+		if (editingRelationship) {
+			diagram.updateRelationship(editingRelationship.relationshipId, { type });
+			editingRelationship = null;
+			return;
+		}
+
+		if (!pendingConnection) return;
+
+		const relationship: Relationship = {
+			id: generateId(),
+			type,
+			sourceId: pendingConnection.sourceId,
+			targetId: pendingConnection.targetId,
+			anchors: {
+				source: pendingConnection.sourceAnchor,
+				target: pendingConnection.targetAnchor
+			}
+		};
+
+		diagram.addRelationship(relationship);
+		selection.clear();
+		pendingConnection = null;
+	}
+
+	function handleTypeCancel() {
+		pendingConnection = null;
+		editingRelationship = null;
+	}
+
+	function handleRelationshipTypeChange(relationshipId: string, position: { x: number; y: number }) {
+		editingRelationship = { relationshipId, position };
+	}
+
+	function handleAnchorAdjustmentComplete(
+		relationshipId: string,
+		end: 'source' | 'target',
+		targetElementId: string,
+		targetAnchor: AnchorPoint
+	) {
+		const relationship = diagram.relationships.find(r => r.id === relationshipId);
+		if (!relationship) return;
+
+		if (end === 'source') {
+			diagram.updateRelationship(relationshipId, {
+				sourceId: targetElementId,
+				anchors: { ...relationship.anchors, source: targetAnchor }
+			});
+		} else {
+			diagram.updateRelationship(relationshipId, {
+				targetId: targetElementId,
+				anchors: { ...relationship.anchors, target: targetAnchor }
+			});
+		}
+	}
 </script>
 
 <Canvas>
 	<RelationshipLayer
 		relationships={diagram.relationships}
 		{elementRects}
+		ontypechange={handleRelationshipTypeChange}
 	/>
 
 	{#each diagram.elements as element (element.id)}
@@ -53,4 +143,40 @@
 			<NoteBox {element} />
 		{/if}
 	{/each}
+
+	<RelationshipHandles
+		relationships={diagram.relationships}
+		{elementRects}
+	/>
+
+	<MultiplicityLabels
+		relationships={diagram.relationships}
+		{elementRects}
+	/>
 </Canvas>
+
+<ConnectionPreview
+	{elementRects}
+	oncomplete={handleConnectionComplete}
+/>
+
+<AnchorAdjustmentPreview
+	{elementRects}
+	oncomplete={handleAnchorAdjustmentComplete}
+/>
+
+{#if pendingConnection}
+	<TypePicker
+		x={pendingConnection.position.x}
+		y={pendingConnection.position.y}
+		onselect={handleTypeSelect}
+		oncancel={handleTypeCancel}
+	/>
+{:else if editingRelationship}
+	<TypePicker
+		x={editingRelationship.position.x}
+		y={editingRelationship.position.y}
+		onselect={handleTypeSelect}
+		oncancel={handleTypeCancel}
+	/>
+{/if}

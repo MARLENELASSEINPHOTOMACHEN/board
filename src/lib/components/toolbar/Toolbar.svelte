@@ -2,9 +2,6 @@
 	import type { ClassElement, NoteElement, ClassType } from '$lib/types';
 	import { diagram, selection } from '$lib/stores';
 	import { generateId } from '$lib/utils';
-	import { RelationshipModal } from '$lib/components/ui';
-
-	let showRelationshipModal = $state(false);
 
 	function addElement(type: ClassType) {
 		const centerX = (window.innerWidth / 2 - diagram.viewport.x) / diagram.viewport.zoom;
@@ -87,14 +84,6 @@
 		>
 			+ Note
 		</button>
-		<button
-			type="button"
-			class="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
-			onclick={() => showRelationshipModal = true}
-			title="Add Relationship"
-		>
-			+ Relation
-		</button>
 	</div>
 
 	<div class="flex items-center gap-1">
@@ -124,7 +113,3 @@
 		</button>
 	</div>
 </div>
-
-{#if showRelationshipModal}
-	<RelationshipModal onclose={() => showRelationshipModal = false} />
-{/if}

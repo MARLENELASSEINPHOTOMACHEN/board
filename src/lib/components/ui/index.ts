@@ -1,1 +1,1 @@
-export { default as RelationshipModal } from './RelationshipModal.svelte';
+export { default as TypePicker } from './TypePicker.svelte';

@@ -4,3 +4,4 @@ export { default as AttributeRow } from './AttributeRow.svelte';
 export { default as MethodRow } from './MethodRow.svelte';
 export { default as InlineEdit } from './InlineEdit.svelte';
 export { default as VisibilityIcon } from './VisibilityIcon.svelte';
+export { default as EdgeHotspots } from './EdgeHotspots.svelte';

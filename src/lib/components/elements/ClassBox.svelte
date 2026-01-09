@@ -6,6 +6,7 @@
 	import InlineEdit from './InlineEdit.svelte';
 	import AttributeRow from './AttributeRow.svelte';
 	import MethodRow from './MethodRow.svelte';
+	import EdgeHotspots from './EdgeHotspots.svelte';
 
 	interface Props {
 		element: ClassElement;
@@ -14,8 +15,10 @@
 	let { element }: Props = $props();
 
 	let isDragging = $state(false);
+	let isHovered = $state(false);
 
 	const isSelected = $derived(selection.isSelected(element.id));
+	const showHotspots = $derived(isHovered || isSelected);
 
 	const stereotypeLabel = $derived(
 		element.type === 'interface'
@@ -112,11 +115,14 @@
 			isDragging = false;
 		}
 	}}
+	onmouseenter={() => (isHovered = true)}
+	onmouseleave={() => (isHovered = false)}
 	role="button"
 	tabindex="0"
 	aria-label="{element.type} {element.name}"
 	data-element-id={element.id}
 >
+	<EdgeHotspots elementId={element.id} visible={showHotspots} />
 	<div class="px-3 py-2 text-center border-b border-stone-300 bg-amber-100/50">
 		{#if stereotypeLabel}
 			<div class="text-xs text-stone-500 font-mono">{stereotypeLabel}</div>

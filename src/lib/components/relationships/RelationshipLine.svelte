@@ -1,14 +1,15 @@
 <script lang="ts">
-	import type { Relationship, Rect } from '$lib/types';
+	import type { Relationship, Rect, Point } from '$lib/types';
 	import { getAnchorPosition, getBestAnchor, createOrthogonalPath } from '$lib/utils';
 	import { selection } from '$lib/stores';
 
 	interface Props {
 		relationship: Relationship;
 		elementRects: Map<string, Rect>;
+		ontypechange?: (relationshipId: string, position: Point) => void;
 	}
 
-	let { relationship, elementRects }: Props = $props();
+	let { relationship, elementRects, ontypechange }: Props = $props();
 
 	const sourceRect = $derived(elementRects.get(relationship.sourceId));
 	const targetRect = $derived(elementRects.get(relationship.targetId));
@@ -96,6 +97,13 @@
 				return 'white';
 		}
 	});
+
+	function handleDoubleClick(event: MouseEvent) {
+		event.stopPropagation();
+		if (ontypechange) {
+			ontypechange(relationship.id, { x: event.clientX, y: event.clientY });
+		}
+	}
 </script>
 
 {#if startPoint && endPoint && path}
@@ -109,6 +117,7 @@
 			stroke-width="12"
 			class="cursor-pointer"
 			onclick={() => selection.select(relationship.id)}
+			ondblclick={handleDoubleClick}
 		/>
 
 		<path
@@ -140,26 +149,6 @@
 			/>
 		{/if}
 
-		{#if relationship.sourceMultiplicity}
-			<text
-				x={startPoint.x + 10}
-				y={startPoint.y - 10}
-				class="text-xs font-mono fill-stone-600"
-			>
-				{relationship.sourceMultiplicity}
-			</text>
-		{/if}
-
-		{#if relationship.targetMultiplicity}
-			<text
-				x={endPoint.x + 10}
-				y={endPoint.y - 10}
-				class="text-xs font-mono fill-stone-600"
-			>
-				{relationship.targetMultiplicity}
-			</text>
-		{/if}
-
 		{#if relationship.label}
 			{@const midX = (startPoint.x + endPoint.x) / 2}
 			{@const midY = (startPoint.y + endPoint.y) / 2}
@@ -172,5 +161,6 @@
 				{relationship.label}
 			</text>
 		{/if}
+
 	</g>
 {/if}

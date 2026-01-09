@@ -1,5 +1,12 @@
-import type { Point, Rect, Size } from '$lib/types';
+import type { Point, Rect, Size, Viewport, Relationship, RelationshipAnchors } from '$lib/types';
 import type { AnchorPoint } from '$lib/types';
+
+export interface RelationshipEndpoints {
+	start: Point;
+	end: Point;
+	sourceAnchor: AnchorPoint;
+	targetAnchor: AnchorPoint;
+}
 
 export function getAnchorPosition(rect: Rect, anchor: AnchorPoint): Point {
 	switch (anchor) {
@@ -86,5 +93,62 @@ export function canvasToScreen(canvasPoint: Point, viewport: { x: number; y: num
 	return {
 		x: canvasPoint.x * viewport.zoom + viewport.x,
 		y: canvasPoint.y * viewport.zoom + viewport.y
+	};
+}
+
+// container-aware coordinate conversions - account for sidebar/header offset
+export function screenToCanvasWithOffset(
+	screenPoint: Point,
+	containerRect: DOMRect,
+	viewport: Viewport
+): Point {
+	return {
+		x: (screenPoint.x - containerRect.left - viewport.x) / viewport.zoom,
+		y: (screenPoint.y - containerRect.top - viewport.y) / viewport.zoom
+	};
+}
+
+export function canvasToScreenWithOffset(
+	canvasPoint: Point,
+	containerRect: DOMRect,
+	viewport: Viewport
+): Point {
+	return {
+		x: canvasPoint.x * viewport.zoom + viewport.x + containerRect.left,
+		y: canvasPoint.y * viewport.zoom + viewport.y + containerRect.top
+	};
+}
+
+// find the closest edge anchor to a point within a rect
+export function getClosestAnchor(rect: Rect, point: Point): AnchorPoint {
+	const edges: { anchor: AnchorPoint; distance: number }[] = [
+		{ anchor: 'top', distance: Math.abs(point.y - rect.y) },
+		{ anchor: 'bottom', distance: Math.abs(point.y - (rect.y + rect.height)) },
+		{ anchor: 'left', distance: Math.abs(point.x - rect.x) },
+		{ anchor: 'right', distance: Math.abs(point.x - (rect.x + rect.width)) }
+	];
+	edges.sort((a, b) => a.distance - b.distance);
+	return edges[0].anchor;
+}
+
+// resolve relationship anchors and compute endpoint positions
+export function getRelationshipEndpoints(
+	relationship: Relationship,
+	elementRects: Map<string, Rect>
+): RelationshipEndpoints | null {
+	const sourceRect = elementRects.get(relationship.sourceId);
+	const targetRect = elementRects.get(relationship.targetId);
+	if (!sourceRect || !targetRect) return null;
+
+	let anchors: RelationshipAnchors = relationship.anchors;
+	if (anchors.source === 'auto' || anchors.target === 'auto') {
+		anchors = getBestAnchor(sourceRect, targetRect);
+	}
+
+	return {
+		start: getAnchorPosition(sourceRect, anchors.source),
+		end: getAnchorPosition(targetRect, anchors.target),
+		sourceAnchor: anchors.source,
+		targetAnchor: anchors.target
 	};
 }
