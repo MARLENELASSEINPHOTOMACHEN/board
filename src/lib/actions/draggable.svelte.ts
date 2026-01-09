@@ -1,11 +1,5 @@
 import type { Action } from 'svelte/action';
-import type { Point } from '$lib/types';
-
-interface Viewport {
-	x: number;
-	y: number;
-	zoom: number;
-}
+import type { Point, Viewport } from '$lib/types';
 
 interface DraggableParams {
 	getViewport: () => Viewport;

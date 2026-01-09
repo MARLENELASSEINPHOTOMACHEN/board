@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { diagram, selection, project } from '$lib/stores';
+	import { diagram, selection } from '$lib/stores';
 	import { matchesShortcut, SHORTCUTS } from '$lib/utils';
 
 	function handleUndo() {

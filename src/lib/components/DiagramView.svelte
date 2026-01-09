@@ -8,34 +8,7 @@
 
 	let elementRects = $state<Map<string, Rect>>(new Map());
 
-	function updateElementRect(id: string, rect: Rect) {
-		elementRects = new Map(elementRects).set(id, rect);
-	}
-
-	$effect(() => {
-		const observer = new MutationObserver(() => {
-			const newRects = new Map<string, Rect>();
-			for (const element of diagram.elements) {
-				const el = document.querySelector(`[data-element-id="${element.id}"]`);
-				if (el) {
-					const rect = el.getBoundingClientRect();
-					newRects.set(element.id, {
-						x: element.position.x,
-						y: element.position.y,
-						width: rect.width / diagram.viewport.zoom,
-						height: rect.height / diagram.viewport.zoom
-					});
-				}
-			}
-			elementRects = newRects;
-		});
-
-		observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-
-		return () => observer.disconnect();
-	});
-
-	$effect(() => {
+	function computeElementRects(): Map<string, Rect> {
 		const newRects = new Map<string, Rect>();
 		for (const element of diagram.elements) {
 			const el = document.querySelector(`[data-element-id="${element.id}"]`);
@@ -49,7 +22,21 @@
 				});
 			}
 		}
-		elementRects = newRects;
+		return newRects;
+	}
+
+	$effect(() => {
+		// dependency tracking - rerun effect when elements change
+		diagram.elements;
+
+		elementRects = computeElementRects();
+
+		const observer = new MutationObserver(() => {
+			elementRects = computeElementRects();
+		});
+		observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+		return () => observer.disconnect();
 	});
 </script>
 

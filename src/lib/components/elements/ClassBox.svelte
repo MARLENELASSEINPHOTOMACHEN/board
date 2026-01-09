@@ -117,7 +117,6 @@
 	aria-label="{element.type} {element.name}"
 	data-element-id={element.id}
 >
-	<!-- Header -->
 	<div class="px-3 py-2 text-center border-b border-stone-300 bg-amber-100/50">
 		{#if stereotypeLabel}
 			<div class="text-xs text-stone-500 font-mono">{stereotypeLabel}</div>
@@ -130,7 +129,6 @@
 		/>
 	</div>
 
-	<!-- Attributes -->
 	<div class="border-b border-stone-300 min-h-[24px]">
 		{#each element.attributes as attr (attr.id)}
 			<AttributeRow
@@ -148,7 +146,6 @@
 		</button>
 	</div>
 
-	<!-- Methods -->
 	<div class="min-h-[24px]">
 		{#each element.methods as method (method.id)}
 			<MethodRow

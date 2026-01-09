@@ -47,7 +47,6 @@
 </script>
 
 <aside class="w-60 bg-stone-50 border-r border-stone-200 flex flex-col h-full">
-	<!-- Project Header -->
 	<div class="p-3 border-b border-stone-200">
 		{#if isEditingProjectName}
 			<input
@@ -69,7 +68,6 @@
 		{/if}
 	</div>
 
-	<!-- Diagrams List -->
 	<div class="flex-1 overflow-y-auto p-2">
 		<div class="flex items-center justify-between px-2 py-1 mb-1">
 			<span class="text-xs font-medium text-stone-500 uppercase tracking-wide">Diagrams</span>

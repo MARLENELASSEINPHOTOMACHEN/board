@@ -54,7 +54,6 @@
 </script>
 
 <div class="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white border border-stone-300 rounded-lg shadow-lg px-3 py-2 z-50">
-	<!-- Add Elements -->
 	<div class="flex items-center gap-1 border-r border-stone-200 pr-3">
 		<button
 			type="button"
@@ -98,7 +97,6 @@
 		</button>
 	</div>
 
-	<!-- Zoom Controls -->
 	<div class="flex items-center gap-1">
 		<button
 			type="button"
