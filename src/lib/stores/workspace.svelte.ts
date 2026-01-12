@@ -84,23 +84,20 @@ function createWorkspaceStore() {
 				diagrams = await storage.getAllDiagrams();
 				folders = await storage.getAllFolders();
 
-				if (diagrams.length === 0) {
-					await this.createDiagram('Untitled Diagram');
+				const activeDiagrams = this.activeDiagrams;
+
+				// no active diagrams - create a default one
+				if (activeDiagrams.length === 0) {
+					const newDiagram = await this.createDiagram('Untitled Diagram');
+					await this.openDiagram(newDiagram.id);
 					return;
 				}
 
+				// try to restore last viewed diagram - otherwise open first available
 				const lastDiagramId = await storage.getSetting<string>('lastDiagramId');
-				const activeDiagrams = this.activeDiagrams;
-				if (lastDiagramId) {
-					const diagramToLoad = activeDiagrams.find((d) => d.id === lastDiagramId);
-					if (diagramToLoad) {
-						await this.openDiagram(lastDiagramId);
-					} else if (activeDiagrams.length > 0) {
-						await this.openDiagram(activeDiagrams[0].id);
-					}
-				} else if (activeDiagrams.length > 0) {
-					await this.openDiagram(activeDiagrams[0].id);
-				}
+				const lastDiagram = lastDiagramId ? activeDiagrams.find((d) => d.id === lastDiagramId) : null;
+				const diagramToOpen = lastDiagram ?? activeDiagrams[0];
+				await this.openDiagram(diagramToOpen.id);
 			} finally {
 				isLoading = false;
 			}
@@ -186,6 +183,10 @@ function createWorkspaceStore() {
 				const activeDiagrams = this.activeDiagrams;
 				if (activeDiagrams.length > 0) {
 					await this.openDiagram(activeDiagrams[0].id);
+				} else {
+					// last diagram trashed - create a new default one
+					const newDiagram = await this.createDiagram('Untitled Diagram');
+					await this.openDiagram(newDiagram.id);
 				}
 			}
 		},
@@ -221,6 +222,9 @@ function createWorkspaceStore() {
 				const activeDiagrams = this.activeDiagrams;
 				if (activeDiagrams.length > 0) {
 					await this.openDiagram(activeDiagrams[0].id);
+				} else {
+					const newDiagram = await this.createDiagram('Untitled Diagram');
+					await this.openDiagram(newDiagram.id);
 				}
 			}
 		},
