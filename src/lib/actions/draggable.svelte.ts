@@ -13,6 +13,7 @@ interface DraggableParams {
 export const draggable: Action<HTMLElement, DraggableParams> = (node, params) => {
 	let startMouse: Point | null = null;
 	let startPositions = new Map<string, Point>();
+	let didMove = false;
 
 	function screenToCanvas(clientX: number, clientY: number, viewport: Viewport): Point {
 		return {
@@ -37,6 +38,7 @@ export const draggable: Action<HTMLElement, DraggableParams> = (node, params) =>
 
 			const vp = getViewport();
 			startMouse = screenToCanvas(event.clientX, event.clientY, vp);
+			didMove = false;
 
 			window.addEventListener('mousemove', handleMouseMove);
 			window.addEventListener('mouseup', handleMouseUp);
@@ -65,6 +67,7 @@ export const draggable: Action<HTMLElement, DraggableParams> = (node, params) =>
 			}
 
 			if (moves.length > 0) {
+				didMove = true;
 				onMove(moves);
 			}
 		}
@@ -73,7 +76,7 @@ export const draggable: Action<HTMLElement, DraggableParams> = (node, params) =>
 			window.removeEventListener('mousemove', handleMouseMove);
 			window.removeEventListener('mouseup', handleMouseUp);
 
-			if (startMouse && startPositions.size > 0) {
+			if (didMove && startPositions.size > 0) {
 				onEnd([...startPositions.keys()]);
 			}
 
