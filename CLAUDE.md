@@ -18,6 +18,8 @@ bun run check        # Type-check with svelte-check
 bun run check:watch  # Type-check in watch mode
 bun run test         # Run all tests once
 bun run test:unit    # Run tests in watch mode
+bun run format       # Format all files with Prettier
+bun run lint         # Check formatting with Prettier
 ```
 
 Run a single test file:
@@ -32,6 +34,7 @@ bun run test:unit src/lib/utils/geometry.spec.ts
 - **TypeScript** in strict mode
 - **Tailwind CSS v4**
 - **Vitest** for testing (tests require assertions via `requireAssertions: true`)
+- **Prettier** with svelte and tailwind plugins
 - **IndexedDB** for persistence (raw API in `services/storage.ts`)
 
 ## Architecture
