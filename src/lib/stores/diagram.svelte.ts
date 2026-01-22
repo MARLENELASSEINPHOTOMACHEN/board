@@ -17,8 +17,7 @@ function createDiagramStore() {
 					...currentDiagram,
 					elements: historyManager.current.elements,
 					relationships: historyManager.current.relationships,
-					viewport: viewport,
-					updatedAt: new Date()
+					viewport: viewport
 				}));
 			}
 		}, 500);

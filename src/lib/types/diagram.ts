@@ -12,14 +12,12 @@ export interface Diagram {
 	elements: DiagramElement[];
 	relationships: Relationship[];
 	viewport: Viewport;
-	createdAt: Date;
-	updatedAt: Date;
-	deletedAt: Date | null;
+	isTrashed: boolean;
 }
 
 export interface Folder {
 	id: string;
 	name: string;
 	parentId: string | null;
-	deletedAt: Date | null;
+	isTrashed: boolean;
 }

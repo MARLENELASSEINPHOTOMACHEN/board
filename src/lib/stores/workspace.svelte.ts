@@ -24,23 +24,23 @@ function createWorkspaceStore() {
 		},
 
 		get activeDiagrams(): Diagram[] {
-			return diagrams.filter((d) => d.deletedAt == null);
+			return diagrams.filter((d) => !d.isTrashed);
 		},
 
 		get activeFolders(): Folder[] {
-			return folders.filter((f) => f.deletedAt == null);
+			return folders.filter((f) => !f.isTrashed);
 		},
 
 		get trashedDiagrams(): Diagram[] {
-			return diagrams.filter((d) => d.deletedAt != null);
+			return diagrams.filter((d) => d.isTrashed);
 		},
 
 		get trashedFolders(): Folder[] {
-			return folders.filter((f) => f.deletedAt != null);
+			return folders.filter((f) => f.isTrashed);
 		},
 
 		get rootDiagrams(): Diagram[] {
-			return diagrams.filter((d) => d.deletedAt == null && d.folderId == null);
+			return diagrams.filter((d) => !d.isTrashed && d.folderId == null);
 		},
 
 		get trashExpanded() {
@@ -48,7 +48,7 @@ function createWorkspaceStore() {
 		},
 
 		getDiagramsByFolder(folderId: string): Diagram[] {
-			return diagrams.filter((d) => d.deletedAt == null && d.folderId === folderId);
+			return diagrams.filter((d) => !d.isTrashed && d.folderId === folderId);
 		},
 
 		isFolderExpanded(folderId: string): boolean {
@@ -112,9 +112,7 @@ function createWorkspaceStore() {
 				elements: [],
 				relationships: [],
 				viewport: { x: 0, y: 0, zoom: 1 },
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				deletedAt: null
+				isTrashed: false
 			};
 
 			await storage.saveDiagram(newDiagram);
@@ -137,8 +135,7 @@ function createWorkspaceStore() {
 
 			const updated = {
 				...$state.snapshot(diagrams[idx]),
-				...updates,
-				updatedAt: new Date()
+				...updates
 			};
 
 			await storage.saveDiagram(updated);
@@ -156,8 +153,7 @@ function createWorkspaceStore() {
 
 			const updated: Diagram = {
 				...$state.snapshot(diagrams[idx]),
-				folderId,
-				updatedAt: new Date()
+				folderId
 			};
 
 			await storage.saveDiagram(updated);
@@ -171,8 +167,7 @@ function createWorkspaceStore() {
 
 			const updated: Diagram = {
 				...$state.snapshot(diagrams[idx]),
-				deletedAt: new Date(),
-				updatedAt: new Date()
+				isTrashed: true
 			};
 
 			await storage.saveDiagram(updated);
@@ -195,24 +190,21 @@ function createWorkspaceStore() {
 			const folderIdx = folders.findIndex((f) => f.id === folderId);
 			if (folderIdx === -1) return;
 
-			const now = new Date();
-
 			const diagramsInFolder = diagrams.filter((d) => d.folderId === folderId);
 			for (const d of diagramsInFolder) {
 				const updated: Diagram = {
 					...$state.snapshot(d),
-					deletedAt: now,
-					updatedAt: now
+					isTrashed: true
 				};
 				await storage.saveDiagram(updated);
 			}
 			diagrams = diagrams.map((d) =>
-				d.folderId === folderId ? { ...d, deletedAt: now, updatedAt: now } : d
+				d.folderId === folderId ? { ...d, isTrashed: true } : d
 			);
 
 			const updatedFolder: Folder = {
 				...$state.snapshot(folders[folderIdx]),
-				deletedAt: now
+				isTrashed: true
 			};
 			await storage.saveFolder(updatedFolder);
 			folders = folders.map((f) => (f.id === folderId ? updatedFolder : f));
@@ -237,13 +229,12 @@ function createWorkspaceStore() {
 
 			// parent folder trashed? move to root instead
 			const parentFolder = diagram.folderId ? folders.find((f) => f.id === diagram.folderId) : null;
-			const parentTrashed = parentFolder?.deletedAt != null;
+			const parentTrashed = parentFolder?.isTrashed === true;
 
 			const updated: Diagram = {
 				...$state.snapshot(diagram),
-				deletedAt: null,
-				folderId: parentTrashed ? null : diagram.folderId,
-				updatedAt: new Date()
+				isTrashed: false,
+				folderId: parentTrashed ? null : diagram.folderId
 			};
 
 			await storage.saveDiagram(updated);
@@ -254,29 +245,26 @@ function createWorkspaceStore() {
 			const folderIdx = folders.findIndex((f) => f.id === folderId);
 			if (folderIdx === -1) return;
 
-			const now = new Date();
-
 			const updatedFolder: Folder = {
 				...$state.snapshot(folders[folderIdx]),
-				deletedAt: null
+				isTrashed: false
 			};
 			await storage.saveFolder(updatedFolder);
 			folders = folders.map((f) => (f.id === folderId ? updatedFolder : f));
 
 			const diagramsInFolder = diagrams.filter(
-				(d) => d.folderId === folderId && d.deletedAt != null
+				(d) => d.folderId === folderId && d.isTrashed
 			);
 			for (const d of diagramsInFolder) {
 				const updated: Diagram = {
 					...$state.snapshot(d),
-					deletedAt: null,
-					updatedAt: now
+					isTrashed: false
 				};
 				await storage.saveDiagram(updated);
 			}
 			diagrams = diagrams.map((d) =>
-				d.folderId === folderId && d.deletedAt != null
-					? { ...d, deletedAt: null, updatedAt: now }
+				d.folderId === folderId && d.isTrashed
+					? { ...d, isTrashed: false }
 					: d
 			);
 		},
@@ -311,14 +299,14 @@ function createWorkspaceStore() {
 				await storage.deleteDiagram(d.id);
 				diagramStore.clearDiagramHistory(d.id);
 			}
-			diagrams = diagrams.filter((d) => d.deletedAt == null);
+			diagrams = diagrams.filter((d) => !d.isTrashed);
 
 			const trashedFolders = this.trashedFolders;
 			const trashedFolderIds = new Set(trashedFolders.map((f) => f.id));
 			for (const f of trashedFolders) {
 				await storage.deleteFolder(f.id);
 			}
-			folders = folders.filter((f) => f.deletedAt == null);
+			folders = folders.filter((f) => !f.isTrashed);
 
 			const cleanedExpandState = Object.fromEntries(
 				Object.entries(folderExpandState).filter(([id]) => !trashedFolderIds.has(id))
@@ -334,7 +322,7 @@ function createWorkspaceStore() {
 				id: generateId(),
 				name,
 				parentId,
-				deletedAt: null
+				isTrashed: false
 			};
 
 			await storage.saveFolder(folder);
