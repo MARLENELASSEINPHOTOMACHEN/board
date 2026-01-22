@@ -1,8 +1,17 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
 	import { workspace } from '$lib/stores';
+	import { storage } from '$lib/services/storage';
 	import DiagramItem from './DiagramItem.svelte';
 	import FolderItem from './FolderItem.svelte';
 	import TrashSection from './TrashSection.svelte';
+
+	async function clearDatabase() {
+		if (confirm('This will delete all diagrams and folders. Are you sure?')) {
+			await storage.clearAll();
+			window.location.reload();
+		}
+	}
 
 	let isRootDragOver = $state(false);
 
@@ -119,4 +128,16 @@
 		isExpanded={workspace.trashExpanded}
 		onToggle={() => workspace.toggleTrashExpanded()}
 	/>
+
+	{#if dev}
+		<div class="p-2 border-t border-stone-200">
+			<button
+				type="button"
+				class="w-full text-xs text-stone-400 hover:text-red-500 hover:bg-red-50 py-1 px-2 rounded cursor-pointer"
+				onclick={clearDatabase}
+			>
+				Clear Database
+			</button>
+		</div>
+	{/if}
 </aside>

@@ -96,7 +96,18 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
 	});
 }
 
+async function clearAll(): Promise<void> {
+	const db = await dbPromise;
+	if (db) {
+		db.close();
+	}
+	dbPromise = null;
+	await deleteDatabase();
+}
+
 export const storage = {
+	clearAll,
+
 	async getAllDiagrams(): Promise<Diagram[]> {
 		const store = await getStore('diagrams', 'readonly');
 		return promisifyRequest(store.getAll());
