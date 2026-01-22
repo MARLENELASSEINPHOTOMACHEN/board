@@ -429,12 +429,12 @@ Notes:
 Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:unit` (watch mode).
 
 #### Utility Tests
-- [ ] `utils/geometry.ts` - SVG path calculations, anchor point math, orthogonal routing
+- [x] `utils/geometry.ts` - SVG path calculations, anchor point math, orthogonal routing
 - [ ] `utils/id.ts` - UUID generation uniqueness
 - [ ] `utils/keyboard.ts` - Shortcut matching
 
 #### Store Tests
-- [ ] `stores/history.svelte.ts` - Undo/redo stack, two-phase commit, diagram switching
+- [x] `stores/history.svelte.ts` - Undo/redo stack, two-phase commit, diagram switching
 - [ ] `stores/diagram.svelte.ts` - Element/relationship CRUD, viewport, auto-save
 - [ ] `stores/selection.svelte.ts` - Selection state management
 - [ ] `stores/workspace.svelte.ts` - Diagram/folder CRUD, trash operations

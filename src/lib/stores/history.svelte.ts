@@ -19,7 +19,7 @@ interface DiagramHistory {
 	currentState: HistoryState;
 }
 
-function createHistoryManager() {
+export function createHistoryManager() {
 	const savedHistories = new Map<string, DiagramHistory>();
 
 	let activeDiagramId = $state<string | null>(null);
