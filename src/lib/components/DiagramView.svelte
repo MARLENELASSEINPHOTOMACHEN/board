@@ -8,6 +8,7 @@
 	import { TypePicker } from './ui';
 	import { generateId } from '$lib/utils';
 
+	let elementsContainerRef: HTMLDivElement | undefined = $state();
 	let elementRects = $state<Map<string, Rect>>(new Map());
 
 	function computeElementRects(): Map<string, Rect> {
@@ -27,16 +28,26 @@
 		return newRects;
 	}
 
+	// recompute rects when elements array changes (additions/removals)
 	$effect(() => {
-		// dependency tracking - rerun effect when elements change
 		diagram.elements;
-
 		elementRects = computeElementRects();
+	});
+
+	// observe DOM mutations in the elements container only - created once when container mounts
+	$effect(() => {
+		if (!elementsContainerRef) return;
 
 		const observer = new MutationObserver(() => {
 			elementRects = computeElementRects();
 		});
-		observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+		observer.observe(elementsContainerRef, {
+			childList: true,
+			subtree: true,
+			attributes: true,
+			characterData: true
+		});
 
 		return () => observer.disconnect();
 	});
@@ -136,13 +147,15 @@
 		ontypechange={handleRelationshipTypeChange}
 	/>
 
-	{#each diagram.elements as element (element.id)}
-		{#if isClassElement(element)}
-			<ClassBox {element} />
-		{:else if isNoteElement(element)}
-			<NoteBox {element} />
-		{/if}
-	{/each}
+	<div bind:this={elementsContainerRef} class="contents">
+		{#each diagram.elements as element (element.id)}
+			{#if isClassElement(element)}
+				<ClassBox {element} />
+			{:else if isNoteElement(element)}
+				<NoteBox {element} />
+			{/if}
+		{/each}
+	</div>
 
 	<RelationshipHandles
 		relationships={diagram.relationships}
