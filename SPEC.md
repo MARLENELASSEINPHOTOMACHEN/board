@@ -223,8 +223,8 @@ function isNoteElement(element: DiagramElement): element is NoteElement;
 ### Phase 2
 
 #### Export/Import
+- [ ] Modular export architecture (see Export System below)
 - [ ] Export diagram as JSON
-- [ ] Export diagram as SVG
 - [ ] Export diagram as PNG
 - [ ] Import diagram from JSON
 
@@ -237,6 +237,10 @@ function isNoteElement(element: DiagramElement): element is NoteElement;
 - [ ] Nested folder organization in sidebar (backend exists)
 
 ### Future Phases
+
+#### Export Formats
+- SVG export (deferred - technical complexity with CSS/fonts)
+- PDF export
 
 #### Additional Diagram Types
 - Sequence diagrams
@@ -334,7 +338,12 @@ src/
 │   │   ├── connection.svelte.ts  # Drag-to-connect state
 │   │   └── index.ts
 │   ├── services/
-│   │   └── storage.ts        # IndexedDB operations
+│   │   ├── storage.ts        # IndexedDB operations
+│   │   └── export/
+│   │       ├── types.ts      # Option and result types
+│   │       ├── json.ts       # JSON export/import
+│   │       ├── png.ts        # PNG export
+│   │       └── index.ts      # Public API
 │   ├── types/
 │   │   ├── diagram.ts
 │   │   ├── elements.ts
@@ -414,8 +423,8 @@ Notes:
 - Undo/redo history
 
 ### Milestone 5: Export & PWA
+- Modular export system with type-safe per-format options
 - JSON export/import
-- SVG export
 - PNG export
 - Service worker
 - PWA manifest
@@ -441,6 +450,8 @@ Tests use `.spec.ts` suffix and can be run via `bun run test` or `bun run test:u
 
 #### Service Tests
 - [ ] `services/storage.ts` - IndexedDB CRUD operations (using fake-indexeddb)
+- [ ] `services/export/json.ts` - JSON export serialization, import validation
+- [ ] `services/export/png.ts` - PNG generation with options
 
 ---
 
@@ -570,6 +581,87 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 
 ---
 
+## Export System
+
+Type-safe per-format configuration using plain functions. Options are fully configurable but UI calls with sensible defaults for now.
+
+### Architecture
+```
+src/lib/services/export/
+├── types.ts           # Option and result types
+├── json.ts            # JSON export/import
+├── png.ts             # PNG export
+└── index.ts           # Public API
+```
+
+### Type Definitions
+```typescript
+// --- Shared result type ---
+interface ExportResult {
+  blob: Blob;
+  filename: string;
+  mimeType: string;
+}
+
+// --- Base options for visual exporters (PNG, SVG, PDF) ---
+interface BaseVisualExportOptions {
+  diagram: Diagram;
+  elementRects: Map<string, Rect>;
+  elements?: 'all' | string[];    // default: 'all'
+  padding?: number;                // default: 40
+}
+
+// --- PNG options ---
+interface PngExportOptions extends BaseVisualExportOptions {
+  scale?: number;                  // default: 2 (retina)
+  background?: string;             // default: '#faf8f4'
+}
+
+// --- JSON options ---
+interface JsonExportOptions {
+  diagram: Diagram;
+  pretty?: boolean;                // default: true
+  version?: number;                // default: 1
+}
+
+// --- Import result with validation ---
+type ImportResult =
+  | { success: true; diagram: Diagram }
+  | { success: false; errors: string[] };
+
+// --- Plain typed functions (no generic interface needed) ---
+function exportToPng(options: PngExportOptions): Promise<ExportResult>;
+function exportToJson(options: JsonExportOptions): Promise<ExportResult>;
+function importFromJson(json: string): ImportResult;
+```
+
+### Default Values
+```typescript
+// png defaults
+const PNG_DEFAULTS = {
+  elements: 'all',
+  padding: 40,
+  scale: 2,
+  background: '#faf8f4',
+} as const;
+
+// json defaults
+const JSON_DEFAULTS = {
+  pretty: true,
+  version: 1,
+} as const;
+```
+
+### Extensibility
+Adding new formats (SVG, PDF) requires:
+1. Define format-specific options type (extend `BaseVisualExportOptions` for visual formats)
+2. Implement `exportToXxx(options: XxxExportOptions)` function
+3. Add format-specific defaults
+
+No changes to existing functions needed.
+
+---
+
 ## Scope Decisions
 
 ### In MVP
@@ -652,7 +744,9 @@ Note: Relationships are created via drag-to-connect from edge hotspots, not tool
 - Discriminated union in connection store prevents invalid state combinations
 
 ### Phase 2 (Not Started)
-- Export/Import (JSON, SVG, PNG)
+- Modular export system with type-safe per-format options
+- JSON export/import
+- PNG export (SVG deferred to future phase)
 - PWA service worker and manifest
 
 ---
