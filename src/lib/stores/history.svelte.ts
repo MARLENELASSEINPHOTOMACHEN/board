@@ -123,7 +123,10 @@ export function createHistoryManager() {
 				return;
 			}
 
-			undoStack = [...undoStack.slice(-(MAX_HISTORY_SIZE - 1)), { state: pendingSnapshot, description }];
+			undoStack = [
+				...undoStack.slice(-(MAX_HISTORY_SIZE - 1)),
+				{ state: pendingSnapshot, description }
+			];
 			redoStack = [];
 			pendingSnapshot = null;
 		},
@@ -136,7 +139,10 @@ export function createHistoryManager() {
 
 			const entry = undoStack[undoStack.length - 1];
 			undoStack = undoStack.slice(0, -1);
-			redoStack = [...redoStack, { state: $state.snapshot(currentState), description: entry.description }];
+			redoStack = [
+				...redoStack,
+				{ state: $state.snapshot(currentState), description: entry.description }
+			];
 			currentState = entry.state;
 			pendingSnapshot = null;
 			return currentState;
@@ -150,7 +156,10 @@ export function createHistoryManager() {
 
 			const entry = redoStack[redoStack.length - 1];
 			redoStack = redoStack.slice(0, -1);
-			undoStack = [...undoStack, { state: $state.snapshot(currentState), description: entry.description }];
+			undoStack = [
+				...undoStack,
+				{ state: $state.snapshot(currentState), description: entry.description }
+			];
 			currentState = entry.state;
 			pendingSnapshot = null;
 			return currentState;

@@ -75,7 +75,7 @@
 </script>
 
 <div
-	class="absolute bg-yellow-100 border-2 rounded shadow-md min-w-[120px] min-h-[60px] select-none"
+	class="absolute min-h-[60px] min-w-[120px] rounded border-2 bg-yellow-100 shadow-md select-none"
 	class:border-stone-800={isSelected}
 	class:border-yellow-400={!isSelected}
 	class:shadow-lg={isSelected}
@@ -109,11 +109,11 @@
 			bind:value={editContent}
 			onblur={commitEdit}
 			onkeydown={handleKeydown}
-			class="w-full h-full min-h-[60px] p-2 text-sm bg-transparent border-none outline-none resize-both font-mono"
+			class="resize-both h-full min-h-[60px] w-full border-none bg-transparent p-2 font-mono text-sm outline-none"
 			placeholder="Enter note..."
 		></textarea>
 	{:else}
-		<div class="p-2 text-sm font-mono whitespace-pre-wrap">
+		<div class="p-2 font-mono text-sm whitespace-pre-wrap">
 			{element.content || 'Double-click to edit...'}
 		</div>
 	{/if}

@@ -61,9 +61,7 @@ function openDatabase(): Promise<IDBDatabase> {
 	if (dbPromise) return dbPromise;
 
 	dbPromise = openDatabaseInternal().then(async (db) => {
-		const missingStores = REQUIRED_STORES.filter(
-			(store) => !db.objectStoreNames.contains(store)
-		);
+		const missingStores = REQUIRED_STORES.filter((store) => !db.objectStoreNames.contains(store));
 
 		if (missingStores.length > 0) {
 			console.warn(`Database corrupt: missing stores [${missingStores.join(', ')}]. Recreating...`);

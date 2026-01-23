@@ -95,7 +95,9 @@ function createWorkspaceStore() {
 
 				// try to restore last viewed diagram - otherwise open first available
 				const lastDiagramId = await storage.getSetting<string>('lastDiagramId');
-				const lastDiagram = lastDiagramId ? activeDiagrams.find((d) => d.id === lastDiagramId) : null;
+				const lastDiagram = lastDiagramId
+					? activeDiagrams.find((d) => d.id === lastDiagramId)
+					: null;
 				const diagramToOpen = lastDiagram ?? activeDiagrams[0];
 				await this.openDiagram(diagramToOpen.id);
 			} finally {
@@ -198,9 +200,7 @@ function createWorkspaceStore() {
 				};
 				await storage.saveDiagram(updated);
 			}
-			diagrams = diagrams.map((d) =>
-				d.folderId === folderId ? { ...d, isTrashed: true } : d
-			);
+			diagrams = diagrams.map((d) => (d.folderId === folderId ? { ...d, isTrashed: true } : d));
 
 			const updatedFolder: Folder = {
 				...$state.snapshot(folders[folderIdx]),
@@ -252,9 +252,7 @@ function createWorkspaceStore() {
 			await storage.saveFolder(updatedFolder);
 			folders = folders.map((f) => (f.id === folderId ? updatedFolder : f));
 
-			const diagramsInFolder = diagrams.filter(
-				(d) => d.folderId === folderId && d.isTrashed
-			);
+			const diagramsInFolder = diagrams.filter((d) => d.folderId === folderId && d.isTrashed);
 			for (const d of diagramsInFolder) {
 				const updated: Diagram = {
 					...$state.snapshot(d),
@@ -263,9 +261,7 @@ function createWorkspaceStore() {
 				await storage.saveDiagram(updated);
 			}
 			diagrams = diagrams.map((d) =>
-				d.folderId === folderId && d.isTrashed
-					? { ...d, isTrashed: false }
-					: d
+				d.folderId === folderId && d.isTrashed ? { ...d, isTrashed: false } : d
 			);
 		},
 

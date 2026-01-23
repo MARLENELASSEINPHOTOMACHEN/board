@@ -12,7 +12,7 @@
 </script>
 
 <!-- Large fixed size ensures lines aren't clipped when elements are far from origin -->
-<svg class="absolute left-0 top-0 w-[10000px] h-[10000px] pointer-events-none overflow-visible">
+<svg class="pointer-events-none absolute top-0 left-0 h-[10000px] w-[10000px] overflow-visible">
 	<g class="pointer-events-auto">
 		{#each relationships as relationship (relationship.id)}
 			<RelationshipLine {relationship} {elementRects} {ontypechange} />

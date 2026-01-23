@@ -56,7 +56,7 @@
 		bind:value={editValue}
 		onblur={commitEdit}
 		onkeydown={handleKeydown}
-		class="min-w-[4ch] bg-white/50 rounded-sm border-none p-0 outline-none ring-1 ring-stone-300 whitespace-nowrap [field-sizing:content] {className}"
+		class="[field-sizing:content] min-w-[4ch] rounded-sm border-none bg-white/50 p-0 whitespace-nowrap ring-1 ring-stone-300 outline-none {className}"
 		{placeholder}
 	/>
 {:else}

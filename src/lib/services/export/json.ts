@@ -141,7 +141,10 @@ function validateElement(element: unknown, index: number): string[] {
 				if (typeof method.returnType !== 'string') {
 					errors.push(`${prefix}: Method ${i} missing returnType`);
 				}
-				if (typeof method.visibility !== 'string' || !VALID_VISIBILITIES.includes(method.visibility)) {
+				if (
+					typeof method.visibility !== 'string' ||
+					!VALID_VISIBILITIES.includes(method.visibility)
+				) {
 					errors.push(`${prefix}: Method ${i} has invalid visibility`);
 				}
 				if (method.parameters !== undefined && Array.isArray(method.parameters)) {

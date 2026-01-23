@@ -20,7 +20,7 @@
 	}
 </script>
 
-<div class="group flex items-center gap-1 px-2 py-0.5 text-sm font-mono hover:bg-stone-100">
+<div class="group flex items-center gap-1 px-2 py-0.5 font-mono text-sm hover:bg-stone-100">
 	<VisibilityIcon visibility={attribute.visibility} onclick={cycleVisibility} />
 	<InlineEdit
 		value={attribute.name}
@@ -33,11 +33,11 @@
 		value={attribute.dataType}
 		onchange={(dataType) => onupdate({ dataType })}
 		placeholder="type"
-		class="flex-1 text-stone-600 whitespace-nowrap"
+		class="flex-1 whitespace-nowrap text-stone-600"
 	/>
 	<button
 		type="button"
-		class="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-red-600 px-1"
+		class="px-1 text-stone-400 opacity-0 group-hover:opacity-100 hover:text-red-600"
 		onclick={ondelete}
 		title="Delete attribute"
 	>

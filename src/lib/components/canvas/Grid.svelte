@@ -12,14 +12,9 @@
 	const adjustedDotSize = $derived(Math.max(1, dotSize * zoom));
 </script>
 
-<svg class="absolute inset-0 w-full h-full pointer-events-none">
+<svg class="pointer-events-none absolute inset-0 h-full w-full">
 	<defs>
-		<pattern
-			id="dot-grid"
-			width={spacing}
-			height={spacing}
-			patternUnits="userSpaceOnUse"
-		>
+		<pattern id="dot-grid" width={spacing} height={spacing} patternUnits="userSpaceOnUse">
 			<circle
 				cx={spacing / 2}
 				cy={spacing / 2}

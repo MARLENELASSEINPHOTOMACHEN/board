@@ -13,7 +13,12 @@
 
 	const anchors: AnchorPoint[] = ['top', 'right', 'bottom', 'left'];
 
-	function getHotspotPosition(anchor: AnchorPoint): { top?: string; right?: string; bottom?: string; left?: string } {
+	function getHotspotPosition(anchor: AnchorPoint): {
+		top?: string;
+		right?: string;
+		bottom?: string;
+		left?: string;
+	} {
 		switch (anchor) {
 			case 'top':
 				return { top: '-5px', left: '50%' };
@@ -63,7 +68,7 @@
 		{@const pos = getHotspotPosition(anchor)}
 		<button
 			type="button"
-			class="absolute w-[10px] h-[10px] rounded-full bg-stone-400 hover:bg-stone-600 hover:scale-125 transition-transform cursor-crosshair z-10"
+			class="absolute z-10 h-[10px] w-[10px] cursor-crosshair rounded-full bg-stone-400 transition-transform hover:scale-125 hover:bg-stone-600"
 			style:top={pos.top}
 			style:right={pos.right}
 			style:bottom={pos.bottom}

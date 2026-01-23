@@ -50,11 +50,16 @@
 	const arrowAngle = $derived.by(() => {
 		if (!anchors) return 0;
 		switch (anchors.target) {
-			case 'top': return 90;      // arrow points down (into top of box)
-			case 'bottom': return 270;  // arrow points up (into bottom of box)
-			case 'left': return 0;      // arrow points right (into left of box)
-			case 'right': return 180;   // arrow points left (into right of box)
-			default: return 0;
+			case 'top':
+				return 90; // arrow points down (into top of box)
+			case 'bottom':
+				return 270; // arrow points up (into bottom of box)
+			case 'left':
+				return 0; // arrow points right (into left of box)
+			case 'right':
+				return 180; // arrow points left (into right of box)
+			default:
+				return 0;
 		}
 	});
 
@@ -63,7 +68,7 @@
 
 		const size = 10;
 		const { x, y } = endPoint;
-		const rad = arrowAngle * Math.PI / 180;
+		const rad = (arrowAngle * Math.PI) / 180;
 		const cos = Math.cos(rad);
 		const sin = Math.sin(rad);
 
@@ -152,15 +157,9 @@
 		{#if relationship.label}
 			{@const midX = (startPoint.x + endPoint.x) / 2}
 			{@const midY = (startPoint.y + endPoint.y) / 2}
-			<text
-				x={midX}
-				y={midY - 8}
-				text-anchor="middle"
-				class="text-xs font-mono fill-stone-700"
-			>
+			<text x={midX} y={midY - 8} text-anchor="middle" class="fill-stone-700 font-mono text-xs">
 				{relationship.label}
 			</text>
 		{/if}
-
 	</g>
 {/if}

@@ -25,24 +25,34 @@
 
 	function getLabelOffset(anchor: AnchorPoint): { x: number; y: number } {
 		switch (anchor) {
-			case 'top': return { x: 10, y: -8 };
-			case 'bottom': return { x: 10, y: 16 };
-			case 'left': return { x: -30, y: -8 };
-			case 'right': return { x: 10, y: -8 };
-			default: return { x: 10, y: -8 };
+			case 'top':
+				return { x: 10, y: -8 };
+			case 'bottom':
+				return { x: 10, y: 16 };
+			case 'left':
+				return { x: -30, y: -8 };
+			case 'right':
+				return { x: 10, y: -8 };
+			default:
+				return { x: 10, y: -8 };
 		}
 	}
 
-	function startEditing(relationshipId: string, end: 'source' | 'target', currentValue: string | undefined) {
+	function startEditing(
+		relationshipId: string,
+		end: 'source' | 'target',
+		currentValue: string | undefined
+	) {
 		editing = { relationshipId, end, value: currentValue ?? '' };
 	}
 
 	function saveEdit() {
 		if (!editing) return;
 
-		const updates = editing.end === 'source'
-			? { sourceMultiplicity: editing.value || undefined }
-			: { targetMultiplicity: editing.value || undefined };
+		const updates =
+			editing.end === 'source'
+				? { sourceMultiplicity: editing.value || undefined }
+				: { targetMultiplicity: editing.value || undefined };
 
 		diagram.updateRelationship(editing.relationshipId, updates);
 		editing = null;
@@ -76,7 +86,7 @@
 				<input
 					use:autofocus
 					type="text"
-					class="absolute w-12 h-5 text-xs font-mono px-1 border border-stone-400 rounded bg-white -translate-y-1/2"
+					class="absolute h-5 w-12 -translate-y-1/2 rounded border border-stone-400 bg-white px-1 font-mono text-xs"
 					style:left="{endpoints.start.x + sourceOffset.x}px"
 					style:top="{endpoints.start.y + sourceOffset.y}px"
 					bind:value={editing.value}
@@ -86,7 +96,7 @@
 			{:else if hasSourceMultiplicity}
 				<button
 					type="button"
-					class="absolute text-xs font-mono text-stone-600 hover:bg-stone-200 px-1 rounded -translate-y-1/2"
+					class="absolute -translate-y-1/2 rounded px-1 font-mono text-xs text-stone-600 hover:bg-stone-200"
 					style:left="{endpoints.start.x + sourceOffset.x}px"
 					style:top="{endpoints.start.y + sourceOffset.y}px"
 					onclick={() => startEditing(relationship.id, 'source', relationship.sourceMultiplicity)}
@@ -96,7 +106,7 @@
 			{:else if isSelected}
 				<button
 					type="button"
-					class="absolute text-xs font-mono text-stone-400 hover:text-stone-600 hover:bg-stone-200 px-1 rounded -translate-y-1/2 border border-dashed border-stone-300"
+					class="absolute -translate-y-1/2 rounded border border-dashed border-stone-300 px-1 font-mono text-xs text-stone-400 hover:bg-stone-200 hover:text-stone-600"
 					style:left="{endpoints.start.x + sourceOffset.x}px"
 					style:top="{endpoints.start.y + sourceOffset.y}px"
 					onclick={() => startEditing(relationship.id, 'source', relationship.sourceMultiplicity)}
@@ -112,7 +122,7 @@
 				<input
 					use:autofocus
 					type="text"
-					class="absolute w-12 h-5 text-xs font-mono px-1 border border-stone-400 rounded bg-white -translate-y-1/2"
+					class="absolute h-5 w-12 -translate-y-1/2 rounded border border-stone-400 bg-white px-1 font-mono text-xs"
 					style:left="{endpoints.end.x + targetOffset.x}px"
 					style:top="{endpoints.end.y + targetOffset.y}px"
 					bind:value={editing.value}
@@ -122,7 +132,7 @@
 			{:else if hasTargetMultiplicity}
 				<button
 					type="button"
-					class="absolute text-xs font-mono text-stone-600 hover:bg-stone-200 px-1 rounded -translate-y-1/2"
+					class="absolute -translate-y-1/2 rounded px-1 font-mono text-xs text-stone-600 hover:bg-stone-200"
 					style:left="{endpoints.end.x + targetOffset.x}px"
 					style:top="{endpoints.end.y + targetOffset.y}px"
 					onclick={() => startEditing(relationship.id, 'target', relationship.targetMultiplicity)}
@@ -132,7 +142,7 @@
 			{:else if isSelected}
 				<button
 					type="button"
-					class="absolute text-xs font-mono text-stone-400 hover:text-stone-600 hover:bg-stone-200 px-1 rounded -translate-y-1/2 border border-dashed border-stone-300"
+					class="absolute -translate-y-1/2 rounded border border-dashed border-stone-300 px-1 font-mono text-xs text-stone-400 hover:bg-stone-200 hover:text-stone-600"
 					style:left="{endpoints.end.x + targetOffset.x}px"
 					style:top="{endpoints.end.y + targetOffset.y}px"
 					onclick={() => startEditing(relationship.id, 'target', relationship.targetMultiplicity)}

@@ -18,7 +18,7 @@
 <button
 	type="button"
 	class="w-4 text-center font-mono text-stone-600 hover:text-stone-900 focus:outline-none"
-	onclick={onclick}
+	{onclick}
 	title={visibility}
 >
 	{symbols[visibility]}

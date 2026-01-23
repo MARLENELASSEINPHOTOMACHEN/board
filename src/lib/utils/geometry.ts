@@ -23,7 +23,10 @@ export function getAnchorPosition(rect: Rect, anchor: AnchorPoint): Point {
 	}
 }
 
-export function getBestAnchor(sourceRect: Rect, targetRect: Rect): { source: AnchorPoint; target: AnchorPoint } {
+export function getBestAnchor(
+	sourceRect: Rect,
+	targetRect: Rect
+): { source: AnchorPoint; target: AnchorPoint } {
 	const sourceCenter = {
 		x: sourceRect.x + sourceRect.width / 2,
 		y: sourceRect.y + sourceRect.height / 2
@@ -37,17 +40,18 @@ export function getBestAnchor(sourceRect: Rect, targetRect: Rect): { source: Anc
 	const dy = targetCenter.y - sourceCenter.y;
 
 	if (Math.abs(dx) > Math.abs(dy)) {
-		return dx > 0
-			? { source: 'right', target: 'left' }
-			: { source: 'left', target: 'right' };
+		return dx > 0 ? { source: 'right', target: 'left' } : { source: 'left', target: 'right' };
 	} else {
-		return dy > 0
-			? { source: 'bottom', target: 'top' }
-			: { source: 'top', target: 'bottom' };
+		return dy > 0 ? { source: 'bottom', target: 'top' } : { source: 'top', target: 'bottom' };
 	}
 }
 
-export function createOrthogonalPath(start: Point, end: Point, sourceAnchor: AnchorPoint, targetAnchor: AnchorPoint): string {
+export function createOrthogonalPath(
+	start: Point,
+	end: Point,
+	sourceAnchor: AnchorPoint,
+	targetAnchor: AnchorPoint
+): string {
 	const midX = (start.x + end.x) / 2;
 	const midY = (start.y + end.y) / 2;
 
@@ -82,14 +86,20 @@ export function clamp(value: number, min: number, max: number): number {
 	return Math.min(Math.max(value, min), max);
 }
 
-export function screenToCanvas(screenPoint: Point, viewport: { x: number; y: number; zoom: number }): Point {
+export function screenToCanvas(
+	screenPoint: Point,
+	viewport: { x: number; y: number; zoom: number }
+): Point {
 	return {
 		x: (screenPoint.x - viewport.x) / viewport.zoom,
 		y: (screenPoint.y - viewport.y) / viewport.zoom
 	};
 }
 
-export function canvasToScreen(canvasPoint: Point, viewport: { x: number; y: number; zoom: number }): Point {
+export function canvasToScreen(
+	canvasPoint: Point,
+	viewport: { x: number; y: number; zoom: number }
+): Point {
 	return {
 		x: canvasPoint.x * viewport.zoom + viewport.x,
 		y: canvasPoint.y * viewport.zoom + viewport.y

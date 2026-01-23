@@ -21,11 +21,7 @@
 	const showHotspots = $derived(isHovered || isSelected);
 
 	const stereotypeLabel = $derived(
-		element.type === 'interface'
-			? '«interface»'
-			: element.type === 'abstract'
-				? '«abstract»'
-				: null
+		element.type === 'interface' ? '«interface»' : element.type === 'abstract' ? '«abstract»' : null
 	);
 
 	function shouldIgnoreDrag(event: MouseEvent): boolean {
@@ -96,7 +92,7 @@
 </script>
 
 <div
-	class="absolute bg-amber-50 border-2 rounded shadow-md min-w-[160px] select-none"
+	class="absolute min-w-[160px] rounded border-2 bg-amber-50 shadow-md select-none"
 	class:border-stone-800={isSelected}
 	class:border-stone-400={!isSelected}
 	class:shadow-lg={isSelected}
@@ -123,19 +119,19 @@
 	data-element-id={element.id}
 >
 	<EdgeHotspots elementId={element.id} visible={showHotspots} />
-	<div class="px-3 py-2 text-center border-b border-stone-300 bg-amber-100/50">
+	<div class="border-b border-stone-300 bg-amber-100/50 px-3 py-2 text-center">
 		{#if stereotypeLabel}
-			<div class="text-xs text-stone-500 font-mono">{stereotypeLabel}</div>
+			<div class="font-mono text-xs text-stone-500">{stereotypeLabel}</div>
 		{/if}
 		<InlineEdit
 			value={element.name}
 			onchange={updateName}
 			placeholder="ClassName"
-			class="font-bold text-stone-800 whitespace-nowrap"
+			class="font-bold whitespace-nowrap text-stone-800"
 		/>
 	</div>
 
-	<div class="border-b border-stone-300 min-h-[24px]">
+	<div class="min-h-[24px] border-b border-stone-300">
 		{#each element.attributes as attr (attr.id)}
 			<AttributeRow
 				attribute={attr}
@@ -145,7 +141,7 @@
 		{/each}
 		<button
 			type="button"
-			class="w-full text-left px-2 py-0.5 text-sm text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+			class="w-full px-2 py-0.5 text-left text-sm text-stone-400 hover:bg-stone-100 hover:text-stone-600"
 			onclick={addAttribute}
 		>
 			+ attribute
@@ -162,7 +158,7 @@
 		{/each}
 		<button
 			type="button"
-			class="w-full text-left px-2 py-0.5 text-sm text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+			class="w-full px-2 py-0.5 text-left text-sm text-stone-400 hover:bg-stone-100 hover:text-stone-600"
 			onclick={addMethod}
 		>
 			+ method()

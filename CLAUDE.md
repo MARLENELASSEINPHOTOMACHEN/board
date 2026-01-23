@@ -23,6 +23,7 @@ bun run lint         # Check formatting with Prettier
 ```
 
 Run a single test file:
+
 ```bash
 bun run test:unit src/lib/utils/geometry.spec.ts
 ```
@@ -40,35 +41,43 @@ bun run test:unit src/lib/utils/geometry.spec.ts
 ## Architecture
 
 ### Data Flow
+
 ```
 IndexedDB → Stores (Svelte 5 runes) → Components → Canvas/SVG
 ```
 
 ### Key Data Models
+
 - **Project** contains multiple **Diagrams**
 - **Diagram** contains **Elements** (classes/interfaces) and **Relationships**
 - **ClassElement** has attributes, methods, position, and visibility modifiers
 - **Relationship** connects elements with type (association, inheritance, etc.) and anchor points
 
 ### Store Pattern
+
 Stores use Svelte 5 runes in `.svelte.ts` files:
+
 - `project.svelte.ts` - Project management
 - `diagram.svelte.ts` - Element add/remove/update
 - `selection.svelte.ts` - Selected elements
 - `history.svelte.ts` - Undo/redo stack
 
 ### History Two-Phase Commit Pattern
+
 The undo/redo system uses a two-phase commit to capture the state BEFORE changes:
+
 1. `updateState()` - captures a pre-change snapshot (if none pending) then applies changes
 2. `push(description)` - stores the pending snapshot to the undo stack
 
 This ensures undo restores to the state before the action - not after. Example:
+
 ```typescript
 historyManager.updateState({ elements: newElements });
 historyManager.push('Add element');
 ```
 
 ### Export Plugin Pattern (Phase 2)
+
 Exporters will implement a common interface for JSON, SVG, and PNG formats.
 
 ## Code Style

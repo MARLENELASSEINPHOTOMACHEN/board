@@ -56,14 +56,14 @@
 	}
 </script>
 
-<aside class="w-60 bg-stone-50 border-r border-stone-200 flex flex-col h-full">
+<aside class="flex h-full w-60 flex-col border-r border-stone-200 bg-stone-50">
 	<div class="flex-1 overflow-y-auto p-2">
-		<div class="flex items-center justify-between px-2 py-1 mb-1">
-			<span class="text-xs font-medium text-stone-500 uppercase tracking-wide">Diagrams</span>
+		<div class="mb-1 flex items-center justify-between px-2 py-1">
+			<span class="text-xs font-medium tracking-wide text-stone-500 uppercase">Diagrams</span>
 			<div class="flex gap-1">
 				<button
 					type="button"
-					class="text-stone-400 hover:text-stone-600 text-sm leading-none px-1 cursor-pointer"
+					class="cursor-pointer px-1 text-sm leading-none text-stone-400 hover:text-stone-600"
 					onclick={createFolder}
 					title="New Folder"
 				>
@@ -71,7 +71,7 @@
 				</button>
 				<button
 					type="button"
-					class="text-stone-400 hover:text-stone-600 text-lg leading-none cursor-pointer"
+					class="cursor-pointer text-lg leading-none text-stone-400 hover:text-stone-600"
 					onclick={createDiagram}
 					title="New Diagram"
 				>
@@ -97,7 +97,7 @@
 
 			{#if workspace.rootDiagrams.length === 0 && workspace.activeFolders.length > 0}
 				<div
-					class="px-3 py-2 mb-1 text-xs text-stone-400 border border-dashed border-stone-300 rounded transition-colors"
+					class="mb-1 rounded border border-dashed border-stone-300 px-3 py-2 text-xs text-stone-400 transition-colors"
 					class:border-amber-400={isRootDragOver}
 					class:bg-amber-50={isRootDragOver}
 					class:text-amber-600={isRootDragOver}
@@ -130,10 +130,10 @@
 	/>
 
 	{#if dev}
-		<div class="p-2 border-t border-stone-200">
+		<div class="border-t border-stone-200 p-2">
 			<button
 				type="button"
-				class="w-full text-xs text-stone-400 hover:text-red-500 hover:bg-red-50 py-1 px-2 rounded cursor-pointer"
+				class="w-full cursor-pointer rounded px-2 py-1 text-xs text-stone-400 hover:bg-red-50 hover:text-red-500"
 				onclick={clearDatabase}
 			>
 				Clear Database

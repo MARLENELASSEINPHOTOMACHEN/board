@@ -113,7 +113,10 @@
 		editingRelationship = null;
 	}
 
-	function handleRelationshipTypeChange(relationshipId: string, position: { x: number; y: number }) {
+	function handleRelationshipTypeChange(
+		relationshipId: string,
+		position: { x: number; y: number }
+	) {
 		editingRelationship = { relationshipId, position };
 	}
 
@@ -123,7 +126,7 @@
 		targetElementId: string,
 		targetAnchor: AnchorPoint
 	) {
-		const relationship = diagram.relationships.find(r => r.id === relationshipId);
+		const relationship = diagram.relationships.find((r) => r.id === relationshipId);
 		if (!relationship) return;
 
 		if (end === 'source') {
@@ -157,26 +160,14 @@
 		{/each}
 	</div>
 
-	<RelationshipHandles
-		relationships={diagram.relationships}
-		{elementRects}
-	/>
+	<RelationshipHandles relationships={diagram.relationships} {elementRects} />
 
-	<MultiplicityLabels
-		relationships={diagram.relationships}
-		{elementRects}
-	/>
+	<MultiplicityLabels relationships={diagram.relationships} {elementRects} />
 </Canvas>
 
-<ConnectionPreview
-	{elementRects}
-	oncomplete={handleConnectionComplete}
-/>
+<ConnectionPreview {elementRects} oncomplete={handleConnectionComplete} />
 
-<AnchorAdjustmentPreview
-	{elementRects}
-	oncomplete={handleAnchorAdjustmentComplete}
-/>
+<AnchorAdjustmentPreview {elementRects} oncomplete={handleAnchorAdjustmentComplete} />
 
 {#if pendingConnection}
 	<TypePicker

@@ -10,17 +10,23 @@
 
 	let { relationships, elementRects }: Props = $props();
 
-	const selectedRelationships = $derived(
-		relationships.filter(r => selection.isSelected(r.id))
-	);
+	const selectedRelationships = $derived(relationships.filter((r) => selection.isSelected(r.id)));
 
-	function handleMouseDown(relationship: Relationship, end: 'source' | 'target', event: MouseEvent) {
+	function handleMouseDown(
+		relationship: Relationship,
+		end: 'source' | 'target',
+		event: MouseEvent
+	) {
 		event.stopPropagation();
 		event.preventDefault();
 		startAdjustment(relationship, end);
 	}
 
-	function handleKeyDown(relationship: Relationship, end: 'source' | 'target', event: KeyboardEvent) {
+	function handleKeyDown(
+		relationship: Relationship,
+		end: 'source' | 'target',
+		event: KeyboardEvent
+	) {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			startAdjustment(relationship, end);
@@ -44,7 +50,7 @@
 		{#if endpoints}
 			<button
 				type="button"
-				class="absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white border-2 border-stone-900 cursor-move z-10"
+				class="absolute z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 cursor-move rounded-full border-2 border-stone-900 bg-white"
 				style:left="{endpoints.start.x}px"
 				style:top="{endpoints.start.y}px"
 				onmousedown={(e) => handleMouseDown(relationship, 'source', e)}
@@ -53,7 +59,7 @@
 			></button>
 			<button
 				type="button"
-				class="absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white border-2 border-stone-900 cursor-move z-10"
+				class="absolute z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 cursor-move rounded-full border-2 border-stone-900 bg-white"
 				style:left="{endpoints.end.x}px"
 				style:top="{endpoints.end.y}px"
 				onmousedown={(e) => handleMouseDown(relationship, 'target', e)}

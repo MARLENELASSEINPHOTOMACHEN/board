@@ -10,7 +10,8 @@
 		const element: ClassElement = {
 			id: generateId(),
 			type,
-			name: type === 'interface' ? 'IInterface' : type === 'abstract' ? 'AbstractClass' : 'ClassName',
+			name:
+				type === 'interface' ? 'IInterface' : type === 'abstract' ? 'AbstractClass' : 'ClassName',
 			position: { x: centerX - 80, y: centerY - 60 },
 			attributes: [],
 			methods: []
@@ -50,11 +51,13 @@
 	const zoomPercent = $derived(Math.round(diagram.viewport.zoom * 100));
 </script>
 
-<div class="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white border border-stone-300 rounded-lg shadow-lg px-3 py-2 z-50">
+<div
+	class="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 shadow-lg"
+>
 	<div class="flex items-center gap-1 border-r border-stone-200 pr-3">
 		<button
 			type="button"
-			class="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
+			class="rounded px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100"
 			onclick={() => addElement('class')}
 			title="Add Class"
 		>
@@ -62,7 +65,7 @@
 		</button>
 		<button
 			type="button"
-			class="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
+			class="rounded px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100"
 			onclick={() => addElement('interface')}
 			title="Add Interface"
 		>
@@ -70,7 +73,7 @@
 		</button>
 		<button
 			type="button"
-			class="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
+			class="rounded px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100"
 			onclick={() => addElement('abstract')}
 			title="Add Abstract Class"
 		>
@@ -78,7 +81,7 @@
 		</button>
 		<button
 			type="button"
-			class="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
+			class="rounded px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100"
 			onclick={addNote}
 			title="Add Note"
 		>
@@ -89,7 +92,7 @@
 	<div class="flex items-center gap-1">
 		<button
 			type="button"
-			class="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-100 rounded transition-colors"
+			class="flex h-8 w-8 items-center justify-center rounded text-stone-600 transition-colors hover:bg-stone-100"
 			onclick={zoomOut}
 			title="Zoom Out"
 		>
@@ -97,7 +100,7 @@
 		</button>
 		<button
 			type="button"
-			class="px-2 py-1 text-sm text-stone-600 hover:bg-stone-100 rounded min-w-[60px]"
+			class="min-w-[60px] rounded px-2 py-1 text-sm text-stone-600 hover:bg-stone-100"
 			onclick={resetZoom}
 			title="Reset Zoom"
 		>
@@ -105,7 +108,7 @@
 		</button>
 		<button
 			type="button"
-			class="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-100 rounded transition-colors"
+			class="flex h-8 w-8 items-center justify-center rounded text-stone-600 transition-colors hover:bg-stone-100"
 			onclick={zoomIn}
 			title="Zoom In"
 		>

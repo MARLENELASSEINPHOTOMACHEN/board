@@ -28,13 +28,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div
-	class="fixed inset-0 z-50"
-	onclick={oncancel}
->
+<div class="fixed inset-0 z-50" onclick={oncancel}>
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="absolute bg-white rounded-lg shadow-xl border border-stone-200 py-1 min-w-[160px]"
+		class="absolute min-w-[160px] rounded-lg border border-stone-200 bg-white py-1 shadow-xl"
 		style:left="{x}px"
 		style:top="{y}px"
 		style:transform="translate(-50%, -50%)"
@@ -43,7 +40,7 @@
 		{#each types as type (type.value)}
 			<button
 				type="button"
-				class="w-full text-left px-3 py-2 text-sm hover:bg-stone-100 flex items-center gap-2"
+				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-stone-100"
 				onclick={() => onselect(type.value)}
 			>
 				<span class="w-5 text-center font-mono">{type.icon}</span>

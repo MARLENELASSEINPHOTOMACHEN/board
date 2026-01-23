@@ -74,7 +74,7 @@
 </script>
 
 <div
-	class="group flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-stone-100 rounded"
+	class="group flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 hover:bg-stone-100"
 	class:bg-stone-200={isActive}
 	class:opacity-50={isDragging}
 	onclick={handleClick}
@@ -86,7 +86,7 @@
 	ondragstart={handleDragStart}
 	ondragend={handleDragEnd}
 >
-	<span class="text-stone-400 text-sm">📄</span>
+	<span class="text-sm text-stone-400">📄</span>
 
 	{#if isEditing}
 		<input
@@ -95,17 +95,20 @@
 			bind:value={editName}
 			onblur={commitRename}
 			onkeydown={handleKeydown}
-			class="flex-1 bg-white border border-stone-300 px-1 py-0 text-sm outline-none focus:border-stone-500 rounded"
+			class="flex-1 rounded border border-stone-300 bg-white px-1 py-0 text-sm outline-none focus:border-stone-500"
 			onclick={(e) => e.stopPropagation()}
 		/>
 	{:else}
-		<span class="flex-1 text-sm text-stone-700 truncate">{diagram.name}</span>
+		<span class="flex-1 truncate text-sm text-stone-700">{diagram.name}</span>
 	{/if}
 
 	<button
 		type="button"
-		class="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-red-600 px-1"
-		onclick={(e) => { e.stopPropagation(); handleDelete(); }}
+		class="px-1 text-stone-400 opacity-0 group-hover:opacity-100 hover:text-red-600"
+		onclick={(e) => {
+			e.stopPropagation();
+			handleDelete();
+		}}
 		title="Delete diagram"
 	>
 		×

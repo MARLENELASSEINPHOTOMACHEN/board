@@ -99,31 +99,31 @@
 	aria-expanded={isExpanded}
 >
 	<div
-		class="group flex items-center gap-1 px-2 py-1.5 cursor-pointer hover:bg-stone-100 rounded"
+		class="group flex cursor-pointer items-center gap-1 rounded px-2 py-1.5 hover:bg-stone-100"
 		class:bg-amber-100={isDragOver}
 		class:ring-2={isDragOver}
 		class:ring-amber-400={isDragOver}
 	>
 		<button
 			type="button"
-			class="w-4 h-4 flex items-center justify-center text-stone-400 hover:text-stone-600"
+			class="flex h-4 w-4 items-center justify-center text-stone-400 hover:text-stone-600"
 			onclick={(e) => {
 				e.stopPropagation();
 				onToggle();
 			}}
 		>
 			{#if isExpanded}
-				<svg class="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
+				<svg class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
 					<path d="M2 4 L6 8 L10 4" stroke="currentColor" stroke-width="2" fill="none" />
 				</svg>
 			{:else}
-				<svg class="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
+				<svg class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
 					<path d="M4 2 L8 6 L4 10" stroke="currentColor" stroke-width="2" fill="none" />
 				</svg>
 			{/if}
 		</button>
 
-		<span class="text-stone-400 text-sm">{isExpanded ? '📂' : '📁'}</span>
+		<span class="text-sm text-stone-400">{isExpanded ? '📂' : '📁'}</span>
 
 		{#if isEditing}
 			<input
@@ -132,13 +132,13 @@
 				bind:value={editName}
 				onblur={commitRename}
 				onkeydown={handleKeydown}
-				class="flex-1 bg-white border border-stone-300 px-1 py-0 text-sm outline-none focus:border-stone-500 rounded"
+				class="flex-1 rounded border border-stone-300 bg-white px-1 py-0 text-sm outline-none focus:border-stone-500"
 				onclick={(e) => e.stopPropagation()}
 			/>
 		{:else}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<span
-				class="flex-1 text-sm text-stone-700 truncate"
+				class="flex-1 truncate text-sm text-stone-700"
 				ondblclick={(e) => {
 					e.stopPropagation();
 					startRename();
@@ -150,7 +150,7 @@
 
 		<button
 			type="button"
-			class="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-red-600 px-1"
+			class="px-1 text-stone-400 opacity-0 group-hover:opacity-100 hover:text-red-600"
 			onclick={(e) => {
 				e.stopPropagation();
 				handleDelete();

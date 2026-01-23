@@ -48,7 +48,12 @@ export const connection = {
 		};
 	},
 
-	startAdjustment(relationshipId: string, end: 'source' | 'target', fixedPosition: Point, startPosition: Point) {
+	startAdjustment(
+		relationshipId: string,
+		end: 'source' | 'target',
+		fixedPosition: Point,
+		startPosition: Point
+	) {
 		state = {
 			type: 'adjusting',
 			adjustment: {

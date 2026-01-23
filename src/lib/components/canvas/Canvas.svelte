@@ -61,7 +61,7 @@
 
 <div
 	bind:this={containerRef}
-	class="relative w-full h-full overflow-hidden bg-stone-100 select-none"
+	class="relative h-full w-full overflow-hidden bg-stone-100 select-none"
 	class:cursor-grabbing={isPanning}
 	onwheel={handleWheel}
 	onmousedown={handleMouseDown}
@@ -73,7 +73,8 @@
 
 	<div
 		class="absolute origin-top-left"
-		style:transform="translate({diagram.viewport.x}px, {diagram.viewport.y}px) scale({diagram.viewport.zoom})"
+		style:transform="translate({diagram.viewport.x}px, {diagram.viewport.y}px) scale({diagram
+			.viewport.zoom})"
 	>
 		{#if children}
 			{@render children()}
